@@ -1,5 +1,5 @@
 use cim_domain_document::*;
-use cim_core_domain::identifiers::EntityId;
+use cim_domain::identifiers::EntityId;
 use cid::Cid;
 
 #[test]

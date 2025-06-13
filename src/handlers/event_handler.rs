@@ -1,6 +1,6 @@
 //! Document event handler
 
-use cim_core_domain::event::EventHandler;
+use cim_domain::EventHandler;
 
 pub struct DocumentEventHandler;
 

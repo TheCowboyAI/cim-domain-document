@@ -1,7 +1,7 @@
 //! Document commands
 
-use cim_core_domain::command::Command;
-use cim_core_domain::identifiers::EntityId;
+use cim_domain::Command;
+use cim_domain::EntityId;
 use crate::aggregate::{
     DocumentMarker, DocumentInfoComponent, ConfidentialityLevel,
     DocumentStatus, DocumentRelation, ExternalReference,
@@ -31,7 +31,7 @@ pub struct UploadDocument {
 impl Command for UploadDocument {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }
@@ -58,7 +58,7 @@ pub struct ClassifyDocument {
 impl Command for ClassifyDocument {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }
@@ -83,7 +83,7 @@ pub struct AssignDocumentOwnership {
 impl Command for AssignDocumentOwnership {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }
@@ -108,7 +108,7 @@ pub struct SetDocumentAccessControl {
 impl Command for SetDocumentAccessControl {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }
@@ -129,7 +129,7 @@ pub struct SetDocumentStatus {
 impl Command for SetDocumentStatus {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }
@@ -154,7 +154,7 @@ pub struct ProcessDocument {
 impl Command for ProcessDocument {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }
@@ -173,7 +173,7 @@ pub struct AddDocumentRelationship {
 impl Command for AddDocumentRelationship {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }
@@ -192,7 +192,7 @@ pub struct RemoveDocumentRelationship {
 impl Command for RemoveDocumentRelationship {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }
@@ -215,7 +215,7 @@ pub struct CreateDocumentVersion {
 impl Command for CreateDocumentVersion {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }
@@ -236,7 +236,7 @@ pub struct ArchiveDocument {
 impl Command for ArchiveDocument {
     type Aggregate = crate::Document;
 
-    fn aggregate_id(&self) -> Option<EntityId<DocumentMarker>> {
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
         Some(EntityId::from_uuid(self.document_id))
     }
 }

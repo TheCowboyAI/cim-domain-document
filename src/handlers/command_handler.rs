@@ -1,7 +1,7 @@
 //! Document command handler
 
-use cim_core_domain::command::{CommandHandler, CommandEnvelope};
-use cim_core_domain::repository::AggregateRepository;
+use cim_domain::{CommandHandler, CommandEnvelope};
+use cim_domain::AggregateRepository;
 use crate::Document;
 
 pub struct DocumentCommandHandler<R: AggregateRepository<Document>> {
