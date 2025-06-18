@@ -3,6 +3,10 @@
 //! A Document is an aggregate that represents business documents stored in a
 //! content-addressed object store using CIDs (Content Identifiers).
 
+mod document_aggregate;
+
+pub use document_aggregate::DocumentAggregate;
+
 use cim_domain::{
     AggregateRoot, Entity, EntityId, DomainError, DomainResult, Component, ComponentStorage,
 };

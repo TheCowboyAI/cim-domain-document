@@ -1,15 +1,18 @@
-//! Document commands
+//! Document domain commands
 
 use cim_domain::Command;
 use cim_domain::EntityId;
 use crate::aggregate::{
-    DocumentMarker, DocumentInfoComponent, ConfidentialityLevel,
-    DocumentStatus, DocumentRelation, ExternalReference,
+    DocumentInfoComponent, ConfidentialityLevel,
+    DocumentStatus, DocumentRelation,
 };
 use uuid::Uuid;
 use cid::Cid;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use crate::value_objects::{
+    DocumentId, DocumentMetadata, DocumentType, 
+    DocumentVersion, Revision,
+};
 
 /// Upload a new document
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -234,6 +237,46 @@ pub struct ArchiveDocument {
 }
 
 impl Command for ArchiveDocument {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(self.document_id))
+    }
+}
+
+/// Update document metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateDocumentMetadata {
+    /// The ID of the document to update
+    pub document_id: Uuid,
+    /// New metadata
+    pub metadata: DocumentMetadata,
+    /// Who is updating
+    pub updated_by: String,
+}
+
+impl Command for UpdateDocumentMetadata {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(self.document_id))
+    }
+}
+
+/// Share a document
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ShareDocument {
+    /// The ID of the document to share
+    pub document_id: Uuid,
+    /// Users to share with
+    pub shared_with: std::collections::HashSet<String>,
+    /// Permissions to grant
+    pub permissions: Vec<String>,
+    /// Who is sharing
+    pub shared_by: String,
+}
+
+impl Command for ShareDocument {
     type Aggregate = crate::Document;
 
     fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {

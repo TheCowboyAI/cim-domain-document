@@ -24,6 +24,7 @@ pub use aggregate::{
 
 pub use commands::*;
 pub use events::*;
+pub use value_objects::*;
 pub use handlers::{DocumentCommandHandler, DocumentEventHandler};
 pub use projections::DocumentView;
 pub use queries::{SearchDocuments, DocumentQueryHandler};
