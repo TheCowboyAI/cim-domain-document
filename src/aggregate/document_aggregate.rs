@@ -76,7 +76,7 @@ impl DocumentAggregate {
         
         // Create classification
         let classification = super::ClassificationComponent {
-            document_type: format!("{:?}", document_type),
+            document_type: format!("{document_type:?}"),
             category: metadata.category.clone().unwrap_or_default(),
             subcategories: metadata.subcategories.clone().unwrap_or_default(),
             tags: metadata.tags.clone(),

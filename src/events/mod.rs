@@ -1,13 +1,10 @@
 //! Document domain events
 
 use crate::value_objects::*;
-use cim_domain::DomainEvent;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use cid::Cid;
 use std::time::SystemTime;
 use std::collections::HashSet;
-use std::path;
 use chrono;
 
 /// Document was uploaded

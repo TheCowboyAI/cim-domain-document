@@ -9,10 +9,7 @@ use crate::aggregate::{
 use uuid::Uuid;
 use cid::Cid;
 use serde::{Deserialize, Serialize};
-use crate::value_objects::{
-    DocumentId, DocumentMetadata, DocumentType, 
-    DocumentVersion, Revision,
-};
+use crate::value_objects::DocumentMetadata;
 
 /// Upload a new document
 #[derive(Debug, Clone, Serialize, Deserialize)]

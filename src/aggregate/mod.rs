@@ -443,8 +443,7 @@ impl Document {
             Ok(())
         } else {
             Err(DomainError::ComponentNotFound(format!(
-                "Component {} not found",
-                component_type
+                "Component {component_type} not found"
             )))
         }
     }

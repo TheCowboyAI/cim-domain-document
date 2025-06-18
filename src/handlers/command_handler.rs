@@ -1,11 +1,9 @@
 //! Document command handler
 
-use cim_domain::{AggregateRepository, CommandEnvelope, CommandAcknowledgment, CommandStatus, DomainResult, CommandId, CorrelationId, DomainError};
+use cim_domain::{AggregateRepository, DomainResult, DomainError};
 use crate::{Document, commands::*, value_objects::{DocumentType, DocumentMetadata}, events::*};
 use async_trait::async_trait;
-use uuid::Uuid;
 use crate::aggregate::DocumentAggregate;
-use std::collections::HashMap;
 
 /// Trait for handling document commands
 #[async_trait]
@@ -48,7 +46,7 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
             tags: vec![],
             custom: std::collections::HashMap::new(),
             mime_type: Some(cmd.info.mime_type.clone()),
-            size_bytes: Some(cmd.info.size_bytes as u64),
+            size_bytes: Some(cmd.info.size_bytes),
             language: cmd.info.language.clone(),
             category: None,
             subcategories: None,
@@ -65,11 +63,11 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
         
         // Save aggregate
         self.repository.save(&aggregate.into())
-            .map_err(|e| DomainError::InternalError(e))?;
+            .map_err(DomainError::InternalError)?;
         
         // Convert to domain events
         let domain_events = events.into_iter()
-            .map(|e| DocumentDomainEvent::DocumentUploaded(e))
+            .map(DocumentDomainEvent::DocumentUploaded)
             .collect();
         
         Ok(domain_events)
@@ -79,7 +77,7 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
         // Load existing aggregate
         let entity_id = cim_domain::EntityId::<crate::aggregate::DocumentMarker>::from_uuid(cmd.document_id);
         let document = self.repository.load(entity_id)
-            .map_err(|e| DomainError::InternalError(e))?
+            .map_err(DomainError::InternalError)?
             .ok_or_else(|| cim_domain::DomainError::EntityNotFound { 
                 entity_type: "Document".to_string(),
                 id: cmd.document_id.to_string()
@@ -91,11 +89,11 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
         
         // Save updated aggregate
         self.repository.save(&aggregate.into())
-            .map_err(|e| DomainError::InternalError(e))?;
+            .map_err(DomainError::InternalError)?;
         
         // Convert to domain events
         let domain_events = events.into_iter()
-            .map(|e| DocumentDomainEvent::DocumentMetadataUpdated(e))
+            .map(DocumentDomainEvent::DocumentMetadataUpdated)
             .collect();
         
         Ok(domain_events)
@@ -105,7 +103,7 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
         // Load existing aggregate
         let entity_id = cim_domain::EntityId::<crate::aggregate::DocumentMarker>::from_uuid(cmd.document_id);
         let document = self.repository.load(entity_id)
-            .map_err(|e| DomainError::InternalError(e))?
+            .map_err(DomainError::InternalError)?
             .ok_or_else(|| cim_domain::DomainError::EntityNotFound { 
                 entity_type: "Document".to_string(),
                 id: cmd.document_id.to_string()
@@ -117,11 +115,11 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
         
         // Save updated aggregate
         self.repository.save(&aggregate.into())
-            .map_err(|e| DomainError::InternalError(e))?;
+            .map_err(DomainError::InternalError)?;
         
         // Convert to domain events
         let domain_events = events.into_iter()
-            .map(|e| DocumentDomainEvent::DocumentShared(e))
+            .map(DocumentDomainEvent::DocumentShared)
             .collect();
         
         Ok(domain_events)
@@ -131,7 +129,7 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
         // Load existing aggregate
         let entity_id = cim_domain::EntityId::<crate::aggregate::DocumentMarker>::from_uuid(cmd.document_id);
         let document = self.repository.load(entity_id)
-            .map_err(|e| DomainError::InternalError(e))?
+            .map_err(DomainError::InternalError)?
             .ok_or_else(|| cim_domain::DomainError::EntityNotFound { 
                 entity_type: "Document".to_string(),
                 id: cmd.document_id.to_string()
@@ -143,11 +141,11 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
         
         // Save updated aggregate
         self.repository.save(&aggregate.into())
-            .map_err(|e| DomainError::InternalError(e))?;
+            .map_err(DomainError::InternalError)?;
         
         // Convert to domain events
         let domain_events = events.into_iter()
-            .map(|e| DocumentDomainEvent::DocumentArchived(e))
+            .map(DocumentDomainEvent::DocumentArchived)
             .collect();
         
         Ok(domain_events)

@@ -1,10 +1,8 @@
 //! Document event handlers
 
 use crate::events::*;
-use crate::value_objects::*;
 use cim_domain::DomainResult;
 use async_trait::async_trait;
-use std::sync::Arc;
 
 /// Trait for handling document events
 #[async_trait]
@@ -16,6 +14,12 @@ pub trait DocumentEventHandler: Send + Sync {
 /// Implementation of document event handler
 pub struct DocumentEventHandlerImpl {
     // Could have projections or other services here
+}
+
+impl Default for DocumentEventHandlerImpl {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DocumentEventHandlerImpl {
