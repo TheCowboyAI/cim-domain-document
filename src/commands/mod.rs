@@ -206,3 +206,99 @@ impl DomainCommand for ArchiveDocument {
 }
 
 impl Command for ArchiveDocument {}
+
+/// Fork a document
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ForkDocument {
+    /// The ID of the document to fork
+    pub document_id: crate::value_objects::DocumentId,
+    /// New document ID for the fork
+    pub fork_id: crate::value_objects::DocumentId,
+    /// Fork description
+    pub description: String,
+    /// Who is forking
+    pub forked_by: Uuid,
+}
+
+impl DomainCommand for ForkDocument {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for ForkDocument {}
+
+/// Tag a document version
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TagVersion {
+    /// Document ID
+    pub document_id: crate::value_objects::DocumentId,
+    /// Tag name
+    pub tag_name: String,
+    /// Tag description
+    pub description: Option<String>,
+    /// Who is tagging
+    pub tagged_by: Uuid,
+}
+
+impl DomainCommand for TagVersion {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for TagVersion {}
+
+/// Add a comment to a document
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AddComment {
+    /// Document ID
+    pub document_id: crate::value_objects::DocumentId,
+    /// Comment content
+    pub content: String,
+    /// Optional reference to specific content block
+    pub block_id: Option<String>,
+    /// Parent comment ID for threads
+    pub parent_comment_id: Option<Uuid>,
+    /// Comment author
+    pub author_id: Uuid,
+}
+
+impl DomainCommand for AddComment {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for AddComment {}
+
+/// Link related documents
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LinkDocuments {
+    /// Source document ID
+    pub source_id: crate::value_objects::DocumentId,
+    /// Target document ID
+    pub target_id: crate::value_objects::DocumentId,
+    /// Link type
+    pub link_type: crate::value_objects::LinkType,
+    /// Link description
+    pub description: Option<String>,
+    /// Who is creating the link
+    pub linked_by: Uuid,
+}
+
+impl DomainCommand for LinkDocuments {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.source_id.as_uuid()))
+    }
+}
+
+impl Command for LinkDocuments {}

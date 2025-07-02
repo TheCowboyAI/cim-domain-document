@@ -40,6 +40,10 @@ impl DocumentEventHandler for DocumentEventHandlerImpl {
             DocumentDomainEvent::DocumentCreated(e) => self.handle_document_created(e).await,
             DocumentDomainEvent::ContentUpdated(e) => self.handle_content_updated(e).await,
             DocumentDomainEvent::StateChanged(e) => self.handle_state_changed(e).await,
+            DocumentDomainEvent::DocumentForked(e) => self.handle_document_forked(e).await,
+            DocumentDomainEvent::VersionTagged(e) => self.handle_version_tagged(e).await,
+            DocumentDomainEvent::CommentAdded(e) => self.handle_comment_added(e).await,
+            DocumentDomainEvent::DocumentsLinked(e) => self.handle_documents_linked(e).await,
         }
     }
 }
@@ -111,6 +115,26 @@ impl DocumentEventHandlerImpl {
     }
     
     async fn handle_state_changed(&self, _event: &StateChanged) -> DomainResult<()> {
+        Ok(())
+    }
+
+    async fn handle_document_forked(&self, _event: &DocumentForked) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_version_tagged(&self, _event: &VersionTagged) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_comment_added(&self, _event: &CommentAdded) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_documents_linked(&self, _event: &DocumentsLinked) -> DomainResult<()> {
+        // Implementation needed
         Ok(())
     }
 }

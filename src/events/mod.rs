@@ -87,6 +87,42 @@ pub struct DocumentArchived {
     pub archived_at: chrono::DateTime<chrono::Utc>,
 }
 
+/// Document was forked
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentForked {
+    pub original_id: DocumentId,
+    pub fork_id: DocumentId,
+    pub fork_point_version: DocumentVersion,
+    pub description: String,
+    pub forked_by: Uuid,
+    pub forked_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Version was tagged
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VersionTagged {
+    pub document_id: DocumentId,
+    pub tag: VersionTag,
+}
+
+/// Comment was added
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CommentAdded {
+    pub document_id: DocumentId,
+    pub comment: Comment,
+}
+
+/// Documents were linked
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentsLinked {
+    pub source_id: DocumentId,
+    pub target_id: DocumentId,
+    pub link_type: LinkType,
+    pub description: Option<String>,
+    pub linked_by: Uuid,
+    pub linked_at: chrono::DateTime<chrono::Utc>,
+}
+
 // Implement as_any for event handlers
 impl DocumentUploaded {
     pub fn as_any(&self) -> &dyn std::any::Any {
@@ -137,4 +173,12 @@ pub enum DocumentDomainEvent {
     ContentUpdated(ContentUpdated),
     /// Document state changed
     StateChanged(StateChanged),
+    /// Document was forked
+    DocumentForked(DocumentForked),
+    /// Version was tagged
+    VersionTagged(VersionTagged),
+    /// Comment was added
+    CommentAdded(CommentAdded),
+    /// Documents were linked
+    DocumentsLinked(DocumentsLinked),
 }

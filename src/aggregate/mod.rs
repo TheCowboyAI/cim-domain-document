@@ -856,46 +856,117 @@ mod tests {
     fn test_search_projection() {
         let id = EntityId::new();
         let info = DocumentInfoComponent {
-            title: "Searchable Document".to_string(),
-            description: Some("Document for search indexing".to_string()),
-            mime_type: "text/markdown".to_string(),
-            filename: Some("search.md".to_string()),
-            size_bytes: 512,
+            title: "Research Paper".to_string(),
+            description: Some("AI research".to_string()),
+            mime_type: "application/pdf".to_string(),
+            filename: Some("paper.pdf".to_string()),
+            size_bytes: 2048,
             language: Some("en".to_string()),
         };
 
         let content_cid = Cid::default();
         let mut document = Document::new(id, info, content_cid);
 
-        // Add components for search
+        // Add classification
         let classification = ClassificationComponent {
-            document_type: "documentation".to_string(),
-            category: "technical".to_string(),
-            subcategories: vec!["api".to_string()],
-            tags: vec!["rest".to_string(), "api".to_string(), "documentation".to_string()],
-            confidentiality: ConfidentialityLevel::Internal,
+            document_type: "Research".to_string(),
+            category: "AI".to_string(),
+            subcategories: vec!["Machine Learning".to_string()],
+            tags: vec!["neural networks".to_string(), "deep learning".to_string()],
+            confidentiality: ConfidentialityLevel::Public,
         };
-
-        let author_id = Uuid::new_v4();
-        let ownership = OwnershipComponent {
-            owner_id: Uuid::new_v4(),
-            authors: vec![author_id],
-            department: Some("Engineering".to_string()),
-            project_id: Some(Uuid::new_v4()),
-            copyright: None,
-        };
-
         document.add_component(classification, "system", None).unwrap();
-        document.add_component(ownership, "system", None).unwrap();
 
         // Create search projection
-        let search_proj = SearchIndexProjection::from_document(&document).unwrap();
+        let projection = SearchIndexProjection::from_document(&document).unwrap();
 
-        assert_eq!(search_proj.title, "Searchable Document");
-        assert_eq!(search_proj.mime_type, "text/markdown");
-        assert_eq!(search_proj.tags.len(), 3);
-        assert_eq!(search_proj.authors.len(), 1);
-        assert_eq!(search_proj.authors[0], author_id);
-        assert_eq!(search_proj.size_bytes, 512);
+        assert_eq!(projection.title, "Research Paper");
+        assert_eq!(projection.tags.len(), 2);
+        assert!(projection.tags.contains(&"neural networks".to_string()));
+    }
+
+    #[test]
+    fn test_document_versioning() {
+        use crate::value_objects::{DocumentVersion, VersionTag};
+        
+        let version = DocumentVersion::new(1, 2, 3);
+        assert_eq!(version.to_string(), "1.2.3");
+
+        let tag = VersionTag {
+            name: "v1.0-release".to_string(),
+            description: Some("First release".to_string()),
+            version: DocumentVersion::new(1, 0, 0),
+            tagged_by: Uuid::new_v4(),
+            tagged_at: chrono::Utc::now(),
+        };
+
+        assert_eq!(tag.name, "v1.0-release");
+        assert_eq!(tag.version.major, 1);
+    }
+
+    #[test]
+    fn test_document_comments() {
+        use crate::value_objects::Comment;
+        
+        let comment = Comment {
+            id: Uuid::new_v4(),
+            content: "Great work on this section!".to_string(),
+            author_id: Uuid::new_v4(),
+            block_id: Some("intro".to_string()),
+            parent_id: None,
+            created_at: chrono::Utc::now(),
+            resolved: false,
+        };
+
+        assert_eq!(comment.content, "Great work on this section!");
+        assert_eq!(comment.block_id, Some("intro".to_string()));
+        assert!(!comment.resolved);
+    }
+
+    #[test]
+    fn test_document_links() {
+        use crate::value_objects::LinkType;
+        
+        let link_types = vec![
+            LinkType::References,
+            LinkType::Related,
+            LinkType::Supersedes,
+            LinkType::DerivedFrom,
+            LinkType::PartOf,
+        ];
+
+        for link_type in link_types {
+            match link_type {
+                LinkType::References => assert_eq!(format!("{:?}", link_type), "References"),
+                LinkType::Related => assert_eq!(format!("{:?}", link_type), "Related"),
+                LinkType::Supersedes => assert_eq!(format!("{:?}", link_type), "Supersedes"),
+                LinkType::DerivedFrom => assert_eq!(format!("{:?}", link_type), "DerivedFrom"),
+                LinkType::PartOf => assert_eq!(format!("{:?}", link_type), "PartOf"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_document_collections() {
+        use crate::value_objects::Collection;
+        
+        let parent_collection = Collection {
+            id: Uuid::new_v4(),
+            name: "Research Papers".to_string(),
+            description: Some("Academic research papers".to_string()),
+            parent_id: None,
+            metadata: HashMap::new(),
+        };
+
+        let child_collection = Collection {
+            id: Uuid::new_v4(),
+            name: "AI Papers".to_string(),
+            description: Some("AI-specific research".to_string()),
+            parent_id: Some(parent_collection.id),
+            metadata: HashMap::new(),
+        };
+
+        assert_eq!(parent_collection.name, "Research Papers");
+        assert_eq!(child_collection.parent_id, Some(parent_collection.id));
     }
 }

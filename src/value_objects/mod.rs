@@ -176,3 +176,67 @@ pub enum DocumentState {
     /// Archived
     Archived,
 }
+
+/// Link type between documents
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LinkType {
+    /// References another document
+    References,
+    /// Related to another document
+    Related,
+    /// Supersedes another document
+    Supersedes,
+    /// Derived from another document
+    DerivedFrom,
+    /// Part of a collection
+    PartOf,
+}
+
+/// Document comment
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Comment {
+    /// Comment ID
+    pub id: Uuid,
+    /// Comment content
+    pub content: String,
+    /// Author ID
+    pub author_id: Uuid,
+    /// Optional reference to content block
+    pub block_id: Option<String>,
+    /// Parent comment for threads
+    pub parent_id: Option<Uuid>,
+    /// Creation timestamp
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    /// Whether the comment is resolved
+    pub resolved: bool,
+}
+
+/// Version tag
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VersionTag {
+    /// Tag name
+    pub name: String,
+    /// Tag description
+    pub description: Option<String>,
+    /// Version number at tag time
+    pub version: DocumentVersion,
+    /// Who created the tag
+    pub tagged_by: Uuid,
+    /// When the tag was created
+    pub tagged_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Document collection
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Collection {
+    /// Collection ID
+    pub id: Uuid,
+    /// Collection name
+    pub name: String,
+    /// Collection description
+    pub description: Option<String>,
+    /// Parent collection for hierarchy
+    pub parent_id: Option<Uuid>,
+    /// Collection metadata
+    pub metadata: HashMap<String, String>,
+}

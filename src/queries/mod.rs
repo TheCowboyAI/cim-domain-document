@@ -2,7 +2,7 @@
 
 use cim_domain::Query;
 use serde::{Deserialize, Serialize};
-use crate::value_objects::{DocumentId, DocumentState, DocumentType, ContentBlock, AccessLevel};
+use crate::value_objects::{DocumentId, DocumentState, DocumentType, ContentBlock, AccessLevel, DocumentVersion, LinkType, Comment};
 use crate::events::DocumentDomainEvent;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -46,6 +46,59 @@ pub struct SearchDocuments {
 
 impl Query for SearchDocuments {}
 
+/// Query to find similar documents
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FindSimilarDocuments {
+    /// Reference document ID
+    pub document_id: DocumentId,
+    /// Similarity threshold (0.0 to 1.0)
+    pub threshold: f32,
+    /// Maximum number of results
+    pub limit: Option<usize>,
+}
+
+impl Query for FindSimilarDocuments {}
+
+/// Query to get document comments
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetDocumentComments {
+    /// Document ID
+    pub document_id: DocumentId,
+    /// Include resolved comments
+    pub include_resolved: bool,
+    /// Filter by block ID
+    pub block_id: Option<String>,
+}
+
+impl Query for GetDocumentComments {}
+
+/// Query to get document versions
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetDocumentVersions {
+    /// Document ID
+    pub document_id: DocumentId,
+    /// Include tag information
+    pub include_tags: bool,
+    /// Limit to specific version range
+    pub from_version: Option<DocumentVersion>,
+    pub to_version: Option<DocumentVersion>,
+}
+
+impl Query for GetDocumentVersions {}
+
+/// Query to get linked documents
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GetLinkedDocuments {
+    /// Document ID
+    pub document_id: DocumentId,
+    /// Filter by link type
+    pub link_type: Option<LinkType>,
+    /// Include bidirectional links
+    pub bidirectional: bool,
+}
+
+impl Query for GetLinkedDocuments {}
+
 /// Document view for queries
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentView {
@@ -66,6 +119,63 @@ pub struct DocumentView {
 pub struct DocumentHistoryView {
     pub document_id: DocumentId,
     pub events: Vec<DocumentDomainEvent>,
+}
+
+/// Comments view
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommentsView {
+    pub document_id: DocumentId,
+    pub comments: Vec<Comment>,
+    pub total_count: usize,
+    pub unresolved_count: usize,
+}
+
+/// Versions view
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VersionsView {
+    pub document_id: DocumentId,
+    pub current_version: DocumentVersion,
+    pub versions: Vec<VersionInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VersionInfo {
+    pub version: DocumentVersion,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub created_by: Uuid,
+    pub change_summary: Option<String>,
+    pub tags: Vec<String>,
+}
+
+/// Linked documents view
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LinkedDocumentsView {
+    pub document_id: DocumentId,
+    pub links: Vec<DocumentLink>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DocumentLink {
+    pub target_id: DocumentId,
+    pub link_type: LinkType,
+    pub description: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub created_by: Uuid,
+}
+
+/// Similar documents view
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SimilarDocumentsView {
+    pub reference_id: DocumentId,
+    pub similar_documents: Vec<SimilarDocument>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SimilarDocument {
+    pub document_id: DocumentId,
+    pub title: String,
+    pub similarity_score: f32,
+    pub common_tags: Vec<String>,
 }
 
 /// Document query handler
