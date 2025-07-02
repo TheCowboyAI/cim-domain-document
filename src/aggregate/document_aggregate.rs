@@ -238,13 +238,4 @@ impl From<DocumentAggregate> for Document {
     fn from(aggregate: DocumentAggregate) -> Self {
         aggregate.document
     }
-}
-
-/// Document events wrapper
-#[derive(Debug, Clone)]
-pub enum DocumentEvent {
-    Uploaded(DocumentUploaded),
-    MetadataUpdated(DocumentMetadataUpdated),
-    Shared(DocumentShared),
-    Archived(DocumentArchived),
 } 
