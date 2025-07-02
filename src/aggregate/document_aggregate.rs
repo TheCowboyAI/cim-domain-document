@@ -222,12 +222,16 @@ impl DocumentAggregate {
         self.document.remove_component::<super::LifecycleComponent>()?;
         self.document.add_component(updated_lifecycle, &archived_by, Some("Archive document".to_string()))?;
         
+        // Parse archived_by as UUID
+        let archived_by_uuid = Uuid::parse_str(&archived_by).unwrap_or_else(|_| Uuid::new_v4());
+        
         // Create event
         let event = DocumentArchived {
             document_id: self.document.id().into(),
             reason,
-            archived_by: archived_by.clone(),
+            archived_by: archived_by_uuid,
             archived_at: chrono::Utc::now(),
+            metadata: std::collections::HashMap::new(),
         };
         
         Ok(vec![event])

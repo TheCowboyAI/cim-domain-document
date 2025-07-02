@@ -3,7 +3,6 @@
 use crate::value_objects::*;
 use serde::{Deserialize, Serialize};
 use cid::Cid;
-use std::time::SystemTime;
 use std::collections::HashSet;
 use chrono;
 use uuid::Uuid;
@@ -76,7 +75,10 @@ pub struct DocumentShared {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DocumentDeleted {
     pub document_id: DocumentId,
-    pub timestamp: SystemTime,
+    pub hard_delete: bool,
+    pub reason: Option<String>,
+    pub deleted_by: Uuid,
+    pub deleted_at: chrono::DateTime<chrono::Utc>,
 }
 
 /// Document was archived
@@ -84,8 +86,9 @@ pub struct DocumentDeleted {
 pub struct DocumentArchived {
     pub document_id: DocumentId,
     pub reason: String,
-    pub archived_by: String,
+    pub archived_by: Uuid,
     pub archived_at: chrono::DateTime<chrono::Utc>,
+    pub metadata: HashMap<String, String>,
 }
 
 /// Document was forked
@@ -234,6 +237,38 @@ pub struct DocumentExported {
     pub exported_at: chrono::DateTime<chrono::Utc>,
 }
 
+/// Document was restored
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentRestored {
+    pub document_id: DocumentId,
+    pub restored_from: RestorationSource,
+    pub restored_by: Uuid,
+    pub restored_at: chrono::DateTime<chrono::Utc>,
+    pub reason: Option<String>,
+}
+
+/// Source of restoration
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum RestorationSource {
+    /// Restored from archive
+    Archive,
+    /// Restored from soft delete
+    SoftDelete,
+    /// Restored from backup
+    Backup { backup_id: String },
+}
+
+/// Versions were compared
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VersionsCompared {
+    pub document_id: DocumentId,
+    pub version_a: DocumentVersion,
+    pub version_b: DocumentVersion,
+    pub comparison_id: Uuid,
+    pub compared_by: Uuid,
+    pub compared_at: chrono::DateTime<chrono::Utc>,
+}
+
 // Implement as_any for event handlers
 impl DocumentUploaded {
     pub fn as_any(&self) -> &dyn std::any::Any {
@@ -312,4 +347,8 @@ pub enum DocumentDomainEvent {
     DocumentImported(DocumentImported),
     /// Document was exported
     DocumentExported(DocumentExported),
+    /// Document was restored
+    DocumentRestored(DocumentRestored),
+    /// Versions were compared
+    VersionsCompared(VersionsCompared),
 }

@@ -54,6 +54,8 @@ impl DocumentEventHandler for DocumentEventHandlerImpl {
             DocumentDomainEvent::DocumentAddedToCollection(e) => self.handle_document_added_to_collection(e).await,
             DocumentDomainEvent::DocumentImported(e) => self.handle_document_imported(e).await,
             DocumentDomainEvent::DocumentExported(e) => self.handle_document_exported(e).await,
+            DocumentDomainEvent::DocumentRestored(e) => self.handle_document_restored(e).await,
+            DocumentDomainEvent::VersionsCompared(e) => self.handle_versions_compared(e).await,
         }
     }
 }
@@ -194,6 +196,16 @@ impl DocumentEventHandlerImpl {
     }
 
     async fn handle_document_exported(&self, _event: &DocumentExported) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_document_restored(&self, _event: &DocumentRestored) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_versions_compared(&self, _event: &VersionsCompared) -> DomainResult<()> {
         // Implementation needed
         Ok(())
     }
