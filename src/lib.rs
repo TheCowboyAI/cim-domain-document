@@ -10,6 +10,7 @@ pub mod handlers;
 pub mod projections;
 pub mod queries;
 pub mod value_objects;
+pub mod services;
 
 // Re-export main types
 pub use aggregate::{

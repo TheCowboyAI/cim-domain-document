@@ -302,3 +302,95 @@ impl DomainCommand for LinkDocuments {
 }
 
 impl Command for LinkDocuments {}
+
+/// Merge changes from a forked document
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MergeDocuments {
+    /// Target document ID (merge into)
+    pub target_id: crate::value_objects::DocumentId,
+    /// Source document ID (merge from)
+    pub source_id: crate::value_objects::DocumentId,
+    /// Merge strategy
+    pub strategy: crate::value_objects::MergeStrategy,
+    /// Conflict resolution
+    pub conflict_resolution: crate::value_objects::ConflictResolution,
+    /// Who is performing the merge
+    pub merged_by: Uuid,
+}
+
+impl DomainCommand for MergeDocuments {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.target_id.as_uuid()))
+    }
+}
+
+impl Command for MergeDocuments {}
+
+/// Rollback to a previous version
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RollbackVersion {
+    /// Document ID
+    pub document_id: crate::value_objects::DocumentId,
+    /// Version to rollback to
+    pub target_version: crate::value_objects::DocumentVersion,
+    /// Reason for rollback
+    pub reason: String,
+    /// Who is performing the rollback
+    pub rolled_back_by: Uuid,
+}
+
+impl DomainCommand for RollbackVersion {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for RollbackVersion {}
+
+/// Extract entities from document content
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtractEntities {
+    /// Document ID
+    pub document_id: crate::value_objects::DocumentId,
+    /// Extraction options
+    pub options: crate::value_objects::ExtractionOptions,
+    /// Who requested extraction
+    pub requested_by: Uuid,
+}
+
+impl DomainCommand for ExtractEntities {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for ExtractEntities {}
+
+/// Generate document summary
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GenerateSummary {
+    /// Document ID
+    pub document_id: crate::value_objects::DocumentId,
+    /// Summary length
+    pub length: crate::value_objects::SummaryLength,
+    /// Language for summary
+    pub language: Option<String>,
+    /// Who requested summary
+    pub requested_by: Uuid,
+}
+
+impl DomainCommand for GenerateSummary {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for GenerateSummary {}

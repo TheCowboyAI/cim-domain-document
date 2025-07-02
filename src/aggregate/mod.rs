@@ -969,4 +969,114 @@ mod tests {
         assert_eq!(parent_collection.name, "Research Papers");
         assert_eq!(child_collection.parent_id, Some(parent_collection.id));
     }
+
+    #[test]
+    fn test_merge_strategies() {
+        use crate::value_objects::{MergeStrategy, ConflictResolution};
+        
+        let strategies = vec![
+            MergeStrategy::ThreeWay,
+            MergeStrategy::Ours,
+            MergeStrategy::Theirs,
+            MergeStrategy::Manual,
+        ];
+
+        for strategy in strategies {
+            match strategy {
+                MergeStrategy::ThreeWay => assert_eq!(format!("{:?}", strategy), "ThreeWay"),
+                MergeStrategy::Ours => assert_eq!(format!("{:?}", strategy), "Ours"),
+                MergeStrategy::Theirs => assert_eq!(format!("{:?}", strategy), "Theirs"),
+                MergeStrategy::Manual => assert_eq!(format!("{:?}", strategy), "Manual"),
+            }
+        }
+
+        let resolutions = vec![
+            ConflictResolution::Auto,
+            ConflictResolution::PreferTarget,
+            ConflictResolution::PreferSource,
+            ConflictResolution::Manual,
+        ];
+
+        assert_eq!(resolutions.len(), 4);
+    }
+
+    #[test]
+    fn test_extraction_options() {
+        use crate::value_objects::ExtractionOptions;
+        
+        let default_options = ExtractionOptions::default();
+        assert!(default_options.extract_entities);
+        assert!(default_options.extract_concepts);
+        assert!(default_options.extract_keywords);
+        assert_eq!(default_options.confidence_threshold, 0.7);
+        assert_eq!(default_options.max_entities, Some(50));
+
+        let custom_options = ExtractionOptions {
+            extract_entities: false,
+            extract_concepts: true,
+            extract_keywords: false,
+            confidence_threshold: 0.9,
+            max_entities: Some(20),
+        };
+
+        assert!(!custom_options.extract_entities);
+        assert_eq!(custom_options.confidence_threshold, 0.9);
+    }
+
+    #[test]
+    fn test_summary_lengths() {
+        use crate::value_objects::SummaryLength;
+        
+        let lengths = vec![
+            SummaryLength::Brief,
+            SummaryLength::Standard,
+            SummaryLength::Detailed,
+            SummaryLength::Custom(100),
+        ];
+
+        for length in lengths {
+            match length {
+                SummaryLength::Brief => assert_eq!(format!("{:?}", length), "Brief"),
+                SummaryLength::Standard => assert_eq!(format!("{:?}", length), "Standard"),
+                SummaryLength::Detailed => assert_eq!(format!("{:?}", length), "Detailed"),
+                SummaryLength::Custom(words) => assert_eq!(words, 100),
+            }
+        }
+    }
+
+    #[test]
+    fn test_entity_types() {
+        use crate::value_objects::{EntityType, ExtractedEntity};
+        
+        let entity = ExtractedEntity {
+            text: "John Smith".to_string(),
+            entity_type: EntityType::Person,
+            confidence: 0.85,
+            start_offset: 0,
+            end_offset: 10,
+            metadata: HashMap::new(),
+        };
+
+        assert_eq!(entity.text, "John Smith");
+        assert!(matches!(entity.entity_type, EntityType::Person));
+        assert_eq!(entity.confidence, 0.85);
+    }
+
+    #[test]
+    fn test_merge_conflicts() {
+        use crate::value_objects::{MergeConflict, ConflictType};
+        
+        let conflict = MergeConflict {
+            id: Uuid::new_v4(),
+            block_id: "intro".to_string(),
+            target_content: "Version A content".to_string(),
+            source_content: "Version B content".to_string(),
+            base_content: Some("Original content".to_string()),
+            conflict_type: ConflictType::ContentModified,
+        };
+
+        assert_eq!(conflict.block_id, "intro");
+        assert!(conflict.base_content.is_some());
+        assert!(matches!(conflict.conflict_type, ConflictType::ContentModified));
+    }
 }

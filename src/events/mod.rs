@@ -123,6 +123,63 @@ pub struct DocumentsLinked {
     pub linked_at: chrono::DateTime<chrono::Utc>,
 }
 
+/// Documents were merged
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentsMerged {
+    pub target_id: DocumentId,
+    pub source_id: DocumentId,
+    pub merge_strategy: MergeStrategy,
+    pub conflicts: Vec<MergeConflict>,
+    pub merged_by: Uuid,
+    pub merged_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Version was rolled back
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VersionRolledBack {
+    pub document_id: DocumentId,
+    pub from_version: DocumentVersion,
+    pub to_version: DocumentVersion,
+    pub reason: String,
+    pub rolled_back_by: Uuid,
+    pub rolled_back_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Entities were extracted
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EntitiesExtracted {
+    pub document_id: DocumentId,
+    pub entities: Vec<ExtractedEntity>,
+    pub extraction_options: ExtractionOptions,
+    pub extracted_by: Uuid,
+    pub extracted_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Summary was generated
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SummaryGenerated {
+    pub document_id: DocumentId,
+    pub summary: DocumentSummary,
+    pub requested_by: Uuid,
+    pub generated_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Document was classified
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentClassified {
+    pub document_id: DocumentId,
+    pub classifications: Vec<Classification>,
+    pub classified_by: String, // System or user ID
+    pub classified_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Classification {
+    pub category: String,
+    pub confidence: f32,
+    pub labels: Vec<String>,
+}
+
 // Implement as_any for event handlers
 impl DocumentUploaded {
     pub fn as_any(&self) -> &dyn std::any::Any {
@@ -181,4 +238,14 @@ pub enum DocumentDomainEvent {
     CommentAdded(CommentAdded),
     /// Documents were linked
     DocumentsLinked(DocumentsLinked),
+    /// Documents were merged
+    DocumentsMerged(DocumentsMerged),
+    /// Version was rolled back
+    VersionRolledBack(VersionRolledBack),
+    /// Entities were extracted
+    EntitiesExtracted(EntitiesExtracted),
+    /// Summary was generated
+    SummaryGenerated(SummaryGenerated),
+    /// Document was classified
+    DocumentClassified(DocumentClassified),
 }

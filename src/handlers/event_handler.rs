@@ -44,6 +44,11 @@ impl DocumentEventHandler for DocumentEventHandlerImpl {
             DocumentDomainEvent::VersionTagged(e) => self.handle_version_tagged(e).await,
             DocumentDomainEvent::CommentAdded(e) => self.handle_comment_added(e).await,
             DocumentDomainEvent::DocumentsLinked(e) => self.handle_documents_linked(e).await,
+            DocumentDomainEvent::DocumentsMerged(e) => self.handle_documents_merged(e).await,
+            DocumentDomainEvent::VersionRolledBack(e) => self.handle_version_rolled_back(e).await,
+            DocumentDomainEvent::EntitiesExtracted(e) => self.handle_entities_extracted(e).await,
+            DocumentDomainEvent::SummaryGenerated(e) => self.handle_summary_generated(e).await,
+            DocumentDomainEvent::DocumentClassified(e) => self.handle_document_classified(e).await,
         }
     }
 }
@@ -134,6 +139,31 @@ impl DocumentEventHandlerImpl {
     }
 
     async fn handle_documents_linked(&self, _event: &DocumentsLinked) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_documents_merged(&self, _event: &DocumentsMerged) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_version_rolled_back(&self, _event: &VersionRolledBack) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_entities_extracted(&self, _event: &EntitiesExtracted) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_summary_generated(&self, _event: &SummaryGenerated) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_document_classified(&self, _event: &DocumentClassified) -> DomainResult<()> {
         // Implementation needed
         Ok(())
     }

@@ -240,3 +240,152 @@ pub struct Collection {
     /// Collection metadata
     pub metadata: HashMap<String, String>,
 }
+
+/// Merge strategy
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MergeStrategy {
+    /// Three-way merge
+    ThreeWay,
+    /// Ours (keep target changes)
+    Ours,
+    /// Theirs (take source changes)
+    Theirs,
+    /// Manual (require manual resolution)
+    Manual,
+}
+
+/// Conflict resolution strategy
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ConflictResolution {
+    /// Automatically resolve conflicts
+    Auto,
+    /// Prefer target document changes
+    PreferTarget,
+    /// Prefer source document changes
+    PreferSource,
+    /// Mark conflicts for manual resolution
+    Manual,
+}
+
+/// Entity extraction options
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExtractionOptions {
+    /// Extract named entities (people, places, orgs)
+    pub extract_entities: bool,
+    /// Extract concepts and topics
+    pub extract_concepts: bool,
+    /// Extract keywords
+    pub extract_keywords: bool,
+    /// Minimum confidence threshold
+    pub confidence_threshold: f32,
+    /// Maximum entities to extract
+    pub max_entities: Option<usize>,
+}
+
+impl Default for ExtractionOptions {
+    fn default() -> Self {
+        Self {
+            extract_entities: true,
+            extract_concepts: true,
+            extract_keywords: true,
+            confidence_threshold: 0.7,
+            max_entities: Some(50),
+        }
+    }
+}
+
+/// Summary length options
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SummaryLength {
+    /// Brief summary (1-2 sentences)
+    Brief,
+    /// Standard summary (1 paragraph)
+    Standard,
+    /// Detailed summary (multiple paragraphs)
+    Detailed,
+    /// Custom length in words
+    Custom(usize),
+}
+
+/// Extracted entity
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExtractedEntity {
+    /// Entity text
+    pub text: String,
+    /// Entity type
+    pub entity_type: EntityType,
+    /// Confidence score
+    pub confidence: f32,
+    /// Start position in document
+    pub start_offset: usize,
+    /// End position in document
+    pub end_offset: usize,
+    /// Additional metadata
+    pub metadata: HashMap<String, String>,
+}
+
+/// Entity type
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EntityType {
+    /// Person name
+    Person,
+    /// Organization
+    Organization,
+    /// Location
+    Location,
+    /// Date/Time
+    DateTime,
+    /// Concept
+    Concept,
+    /// Keyword
+    Keyword,
+    /// Custom type
+    Custom(String),
+}
+
+/// Document summary
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentSummary {
+    /// Summary text
+    pub text: String,
+    /// Key points extracted
+    pub key_points: Vec<String>,
+    /// Summary length type
+    pub length: SummaryLength,
+    /// Language of summary
+    pub language: String,
+    /// Generation timestamp
+    pub generated_at: chrono::DateTime<chrono::Utc>,
+    /// Quality score
+    pub quality_score: Option<f32>,
+}
+
+/// Merge conflict
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MergeConflict {
+    /// Conflict ID
+    pub id: Uuid,
+    /// Block or section with conflict
+    pub block_id: String,
+    /// Target document content
+    pub target_content: String,
+    /// Source document content
+    pub source_content: String,
+    /// Base content (common ancestor)
+    pub base_content: Option<String>,
+    /// Conflict type
+    pub conflict_type: ConflictType,
+}
+
+/// Conflict type
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ConflictType {
+    /// Content modification conflict
+    ContentModified,
+    /// Block deleted in one version
+    BlockDeleted,
+    /// Block added in both versions
+    BlockAdded,
+    /// Metadata conflict
+    MetadataConflict,
+}
