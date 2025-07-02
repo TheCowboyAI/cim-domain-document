@@ -73,6 +73,8 @@ pub enum DocumentType {
     Spreadsheet,
     Presentation,
     Archive,
+    Note,
+    Article,
     Proposal,
     Report,
     Contract,
@@ -388,4 +390,257 @@ pub enum ConflictType {
     BlockAdded,
     /// Metadata conflict
     MetadataConflict,
+}
+
+/// Template ID
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct TemplateId(Uuid);
+
+impl TemplateId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    pub fn from_uuid(id: Uuid) -> Self {
+        Self(id)
+    }
+
+    pub fn as_uuid(&self) -> &Uuid {
+        &self.0
+    }
+}
+
+/// Document template
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentTemplate {
+    /// Template ID
+    pub id: TemplateId,
+    /// Template name
+    pub name: String,
+    /// Template description
+    pub description: Option<String>,
+    /// Template content with variable placeholders
+    pub content: String,
+    /// Required variables
+    pub required_variables: Vec<TemplateVariable>,
+    /// Template category
+    pub category: String,
+    /// Template version
+    pub version: DocumentVersion,
+}
+
+/// Template variable
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TemplateVariable {
+    /// Variable name
+    pub name: String,
+    /// Variable description
+    pub description: Option<String>,
+    /// Variable type
+    pub var_type: VariableType,
+    /// Default value
+    pub default_value: Option<String>,
+    /// Is required
+    pub required: bool,
+}
+
+/// Variable type
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum VariableType {
+    /// Plain text
+    Text,
+    /// Number
+    Number,
+    /// Date
+    Date,
+    /// Boolean
+    Boolean,
+    /// List of values
+    List(Vec<String>),
+}
+
+/// Import format
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ImportFormat {
+    /// Markdown format
+    Markdown,
+    /// Plain text
+    PlainText,
+    /// HTML
+    Html,
+    /// PDF
+    Pdf,
+    /// Microsoft Word
+    Word,
+    /// JSON
+    Json,
+    /// Custom format
+    Custom(String),
+}
+
+/// Export format
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ExportFormat {
+    /// Markdown format
+    Markdown,
+    /// Plain text
+    PlainText,
+    /// HTML
+    Html,
+    /// PDF
+    Pdf,
+    /// Microsoft Word
+    Word,
+    /// JSON
+    Json,
+    /// Custom format
+    Custom(String),
+}
+
+/// Import options
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ImportOptions {
+    /// Extract metadata
+    pub extract_metadata: bool,
+    /// Preserve formatting
+    pub preserve_formatting: bool,
+    /// Convert images
+    pub convert_images: bool,
+    /// Character encoding
+    pub encoding: String,
+    /// Custom options
+    pub custom_options: HashMap<String, String>,
+}
+
+impl Default for ImportOptions {
+    fn default() -> Self {
+        Self {
+            extract_metadata: true,
+            preserve_formatting: true,
+            convert_images: true,
+            encoding: "UTF-8".to_string(),
+            custom_options: HashMap::new(),
+        }
+    }
+}
+
+/// Export options
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ExportOptions {
+    /// Include metadata
+    pub include_metadata: bool,
+    /// Include version history
+    pub include_history: bool,
+    /// Include comments
+    pub include_comments: bool,
+    /// Watermark text
+    pub watermark: Option<String>,
+    /// Custom options
+    pub custom_options: HashMap<String, String>,
+}
+
+impl Default for ExportOptions {
+    fn default() -> Self {
+        Self {
+            include_metadata: true,
+            include_history: false,
+            include_comments: true,
+            watermark: None,
+            custom_options: HashMap::new(),
+        }
+    }
+}
+
+/// Search query
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SearchQuery {
+    /// Query text
+    pub query: String,
+    /// Search fields
+    pub fields: Vec<SearchField>,
+    /// Filters
+    pub filters: Vec<SearchFilter>,
+    /// Sort order
+    pub sort: SearchSort,
+    /// Pagination
+    pub pagination: SearchPagination,
+}
+
+/// Search field
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SearchField {
+    /// Title field
+    Title,
+    /// Content field
+    Content,
+    /// Tags field
+    Tags,
+    /// Author field
+    Author,
+    /// All fields
+    All,
+}
+
+/// Search filter
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SearchFilter {
+    /// Field to filter
+    pub field: String,
+    /// Filter operator
+    pub operator: FilterOperator,
+    /// Filter value
+    pub value: String,
+}
+
+/// Filter operator
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FilterOperator {
+    /// Equals
+    Equals,
+    /// Not equals
+    NotEquals,
+    /// Contains
+    Contains,
+    /// Greater than
+    GreaterThan,
+    /// Less than
+    LessThan,
+    /// In list
+    In,
+}
+
+/// Search sort
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SearchSort {
+    /// Sort field
+    pub field: String,
+    /// Sort direction
+    pub direction: SortDirection,
+}
+
+/// Sort direction
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SortDirection {
+    /// Ascending
+    Ascending,
+    /// Descending
+    Descending,
+}
+
+/// Search pagination
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SearchPagination {
+    /// Page number (0-based)
+    pub page: usize,
+    /// Page size
+    pub size: usize,
+}
+
+impl Default for SearchPagination {
+    fn default() -> Self {
+        Self {
+            page: 0,
+            size: 20,
+        }
+    }
 }

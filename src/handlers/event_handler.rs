@@ -49,6 +49,11 @@ impl DocumentEventHandler for DocumentEventHandlerImpl {
             DocumentDomainEvent::EntitiesExtracted(e) => self.handle_entities_extracted(e).await,
             DocumentDomainEvent::SummaryGenerated(e) => self.handle_summary_generated(e).await,
             DocumentDomainEvent::DocumentClassified(e) => self.handle_document_classified(e).await,
+            DocumentDomainEvent::TemplateApplied(e) => self.handle_template_applied(e).await,
+            DocumentDomainEvent::CollectionCreated(e) => self.handle_collection_created(e).await,
+            DocumentDomainEvent::DocumentAddedToCollection(e) => self.handle_document_added_to_collection(e).await,
+            DocumentDomainEvent::DocumentImported(e) => self.handle_document_imported(e).await,
+            DocumentDomainEvent::DocumentExported(e) => self.handle_document_exported(e).await,
         }
     }
 }
@@ -164,6 +169,31 @@ impl DocumentEventHandlerImpl {
     }
 
     async fn handle_document_classified(&self, _event: &DocumentClassified) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_template_applied(&self, _event: &TemplateApplied) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_collection_created(&self, _event: &CollectionCreated) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_document_added_to_collection(&self, _event: &DocumentAddedToCollection) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_document_imported(&self, _event: &DocumentImported) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_document_exported(&self, _event: &DocumentExported) -> DomainResult<()> {
         // Implementation needed
         Ok(())
     }

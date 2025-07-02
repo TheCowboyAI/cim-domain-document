@@ -36,6 +36,9 @@ chrono = { version = "0.4", features = ["serde"] }
 # CID support
 cid = "0.11"
 
+# Regular expressions
+regex = "1.10"
+
 [dev-dependencies]
 tokio-test = "0.4"
 proptest = "1.6"

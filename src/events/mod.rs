@@ -7,6 +7,7 @@ use std::time::SystemTime;
 use std::collections::HashSet;
 use chrono;
 use uuid::Uuid;
+use std::collections::HashMap;
 
 /// Document was created
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -180,6 +181,59 @@ pub struct Classification {
     pub labels: Vec<String>,
 }
 
+/// Template was applied
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TemplateApplied {
+    pub document_id: DocumentId,
+    pub template_id: TemplateId,
+    pub variables: HashMap<String, String>,
+    pub applied_by: Uuid,
+    pub applied_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Collection was created
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CollectionCreated {
+    pub collection_id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub parent_id: Option<Uuid>,
+    pub metadata: HashMap<String, String>,
+    pub created_by: Uuid,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Document added to collection
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentAddedToCollection {
+    pub document_id: DocumentId,
+    pub collection_id: Uuid,
+    pub added_by: Uuid,
+    pub added_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Document was imported
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentImported {
+    pub document_id: DocumentId,
+    pub source_format: ImportFormat,
+    pub original_filename: Option<String>,
+    pub metadata_extracted: HashMap<String, String>,
+    pub imported_by: Uuid,
+    pub imported_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Document was exported
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentExported {
+    pub document_id: DocumentId,
+    pub target_format: ExportFormat,
+    pub export_size: usize,
+    pub included_history: bool,
+    pub exported_by: Uuid,
+    pub exported_at: chrono::DateTime<chrono::Utc>,
+}
+
 // Implement as_any for event handlers
 impl DocumentUploaded {
     pub fn as_any(&self) -> &dyn std::any::Any {
@@ -248,4 +302,14 @@ pub enum DocumentDomainEvent {
     SummaryGenerated(SummaryGenerated),
     /// Document was classified
     DocumentClassified(DocumentClassified),
+    /// Template was applied
+    TemplateApplied(TemplateApplied),
+    /// Collection was created
+    CollectionCreated(CollectionCreated),
+    /// Document added to collection
+    DocumentAddedToCollection(DocumentAddedToCollection),
+    /// Document was imported
+    DocumentImported(DocumentImported),
+    /// Document was exported
+    DocumentExported(DocumentExported),
 }

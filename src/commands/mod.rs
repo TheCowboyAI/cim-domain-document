@@ -394,3 +394,122 @@ impl DomainCommand for GenerateSummary {
 }
 
 impl Command for GenerateSummary {}
+
+/// Apply a template to a document
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApplyTemplate {
+    /// Document ID
+    pub document_id: crate::value_objects::DocumentId,
+    /// Template ID to apply
+    pub template_id: crate::value_objects::TemplateId,
+    /// Variable values for substitution
+    pub variables: std::collections::HashMap<String, String>,
+    /// Who is applying the template
+    pub applied_by: Uuid,
+}
+
+impl DomainCommand for ApplyTemplate {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for ApplyTemplate {}
+
+/// Create a document collection
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateCollection {
+    /// Collection ID
+    pub collection_id: Uuid,
+    /// Collection name
+    pub name: String,
+    /// Collection description
+    pub description: Option<String>,
+    /// Parent collection ID for hierarchy
+    pub parent_id: Option<Uuid>,
+    /// Collection metadata
+    pub metadata: std::collections::HashMap<String, String>,
+    /// Who is creating the collection
+    pub created_by: Uuid,
+}
+
+impl DomainCommand for CreateCollection {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        None // Collections are separate from individual documents
+    }
+}
+
+impl Command for CreateCollection {}
+
+/// Add document to collection
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AddToCollection {
+    /// Document ID
+    pub document_id: crate::value_objects::DocumentId,
+    /// Collection ID
+    pub collection_id: Uuid,
+    /// Who is adding to collection
+    pub added_by: Uuid,
+}
+
+impl DomainCommand for AddToCollection {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for AddToCollection {}
+
+/// Import external document
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImportDocument {
+    /// New document ID
+    pub document_id: crate::value_objects::DocumentId,
+    /// Source format
+    pub source_format: crate::value_objects::ImportFormat,
+    /// Content to import
+    pub content: Vec<u8>,
+    /// Import options
+    pub options: crate::value_objects::ImportOptions,
+    /// Who is importing
+    pub imported_by: Uuid,
+}
+
+impl DomainCommand for ImportDocument {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for ImportDocument {}
+
+/// Export document
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExportDocument {
+    /// Document ID
+    pub document_id: crate::value_objects::DocumentId,
+    /// Target format
+    pub target_format: crate::value_objects::ExportFormat,
+    /// Export options
+    pub options: crate::value_objects::ExportOptions,
+    /// Who is exporting
+    pub exported_by: Uuid,
+}
+
+impl DomainCommand for ExportDocument {
+    type Aggregate = crate::Document;
+
+    fn aggregate_id(&self) -> Option<EntityId<Self::Aggregate>> {
+        Some(EntityId::from_uuid(*self.document_id.as_uuid()))
+    }
+}
+
+impl Command for ExportDocument {}
