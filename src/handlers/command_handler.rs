@@ -101,7 +101,7 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
     
     async fn handle_share_document(&self, cmd: ShareDocument) -> DomainResult<Vec<DocumentDomainEvent>> {
         // Load existing aggregate
-        let entity_id = cim_domain::EntityId::<crate::aggregate::DocumentMarker>::from_uuid(cmd.document_id);
+        let entity_id = cim_domain::EntityId::<crate::aggregate::DocumentMarker>::from_uuid(*cmd.document_id.as_uuid());
         let document = self.repository.load(entity_id)
             .map_err(DomainError::InternalError)?
             .ok_or_else(|| cim_domain::DomainError::EntityNotFound { 
@@ -110,8 +110,19 @@ impl<R: AggregateRepository<Document> + Send + Sync> DocumentCommandHandler for 
             })?;
         let mut aggregate = DocumentAggregate::from(document);
         
+        // Convert access level to permissions
+        let permissions = match cmd.access_level {
+            crate::value_objects::AccessLevel::Read => vec!["read".to_string()],
+            crate::value_objects::AccessLevel::Comment => vec!["read".to_string(), "comment".to_string()],
+            crate::value_objects::AccessLevel::Write => vec!["read".to_string(), "write".to_string()],
+            crate::value_objects::AccessLevel::Admin => vec!["read".to_string(), "write".to_string(), "share".to_string()],
+        };
+        
+        let mut shared_with = std::collections::HashSet::new();
+        shared_with.insert(cmd.share_with.to_string());
+        
         // Process the share command
-        let events = aggregate.share(cmd.shared_with, cmd.permissions, cmd.shared_by)?;
+        let events = aggregate.share(shared_with, permissions, cmd.shared_by.to_string())?;
         
         // Save updated aggregate
         self.repository.save(&aggregate.into())

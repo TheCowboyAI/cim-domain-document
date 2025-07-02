@@ -167,7 +167,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         include_metadata: true,
     };
 
-    let document = query_handler.handle(get_document).await?;
+    let document = query_handler.handle(&get_document).await?;
     println!("   Document: {}", document.title);
     println!("   State: {:?}", document.state);
     println!("   Sections: {}", document.content_blocks.len());
@@ -180,7 +180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         include_content_changes: true,
     };
 
-    let history = query_handler.handle(get_history).await?;
+    let history = query_handler.handle(&get_history).await?;
     println!("   Document has {} historical events", history.events.len());
 
     for (idx, event) in history.events.iter().enumerate() {

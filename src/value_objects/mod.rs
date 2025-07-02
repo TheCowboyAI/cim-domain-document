@@ -16,6 +16,11 @@ impl DocumentId {
     pub fn new() -> Self {
         Self(Uuid::new_v4())
     }
+
+    /// Get the inner UUID
+    pub fn as_uuid(&self) -> &Uuid {
+        &self.0
+    }
 }
 
 impl Default for DocumentId {
@@ -68,6 +73,9 @@ pub enum DocumentType {
     Spreadsheet,
     Presentation,
     Archive,
+    Proposal,
+    Report,
+    Contract,
     Other(String),
 }
 
@@ -124,4 +132,47 @@ impl From<u32> for Revision {
     fn from(rev: u32) -> Self {
         Self(rev)
     }
+}
+
+/// Content block for structured documents
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ContentBlock {
+    /// Block ID
+    pub id: String,
+    /// Block type (e.g., "section", "paragraph", "image")
+    pub block_type: String,
+    /// Block title/heading
+    pub title: Option<String>,
+    /// Block content
+    pub content: String,
+    /// Metadata for the block
+    pub metadata: HashMap<String, String>,
+}
+
+/// Access level for document sharing
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AccessLevel {
+    /// Can view the document
+    Read,
+    /// Can view and comment
+    Comment,
+    /// Can view, comment, and edit
+    Write,
+    /// Full access including sharing
+    Admin,
+}
+
+/// Document state in workflow
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DocumentState {
+    /// Initial draft state
+    Draft,
+    /// Under review
+    InReview,
+    /// Approved and published
+    Approved,
+    /// Rejected with feedback
+    Rejected,
+    /// Archived
+    Archived,
 }

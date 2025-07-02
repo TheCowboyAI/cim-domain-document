@@ -27,4 +27,4 @@ pub use events::*;
 pub use value_objects::*;
 pub use handlers::{DocumentCommandHandler, DocumentEventHandler};
 pub use projections::DocumentView;
-pub use queries::{SearchDocuments, DocumentQueryHandler};
+pub use queries::{SearchDocuments, GetDocument, GetDocumentHistory, DocumentQueryHandler, DocumentView as DocumentQueryView, DocumentHistoryView};

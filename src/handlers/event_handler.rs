@@ -37,6 +37,9 @@ impl DocumentEventHandler for DocumentEventHandlerImpl {
             DocumentDomainEvent::DocumentShared(e) => self.handle_document_shared(e).await,
             DocumentDomainEvent::DocumentDeleted(e) => self.handle_document_deleted(e).await,
             DocumentDomainEvent::DocumentArchived(e) => self.handle_document_archived(e).await,
+            DocumentDomainEvent::DocumentCreated(e) => self.handle_document_created(e).await,
+            DocumentDomainEvent::ContentUpdated(e) => self.handle_content_updated(e).await,
+            DocumentDomainEvent::StateChanged(e) => self.handle_state_changed(e).await,
         }
     }
 }
@@ -96,6 +99,18 @@ impl DocumentEventHandlerImpl {
         // Update archive index
         // Clean up any temporary data
         
+        Ok(())
+    }
+    
+    async fn handle_document_created(&self, _event: &DocumentCreated) -> DomainResult<()> {
+        Ok(())
+    }
+    
+    async fn handle_content_updated(&self, _event: &ContentUpdated) -> DomainResult<()> {
+        Ok(())
+    }
+    
+    async fn handle_state_changed(&self, _event: &StateChanged) -> DomainResult<()> {
         Ok(())
     }
 }

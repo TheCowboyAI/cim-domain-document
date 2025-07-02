@@ -6,6 +6,39 @@ use cid::Cid;
 use std::time::SystemTime;
 use std::collections::HashSet;
 use chrono;
+use uuid::Uuid;
+
+/// Document was created
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentCreated {
+    pub document_id: DocumentId,
+    pub document_type: DocumentType,
+    pub title: String,
+    pub author_id: Uuid,
+    pub metadata: std::collections::HashMap<String, String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Document content was updated
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ContentUpdated {
+    pub document_id: DocumentId,
+    pub content_blocks: Vec<ContentBlock>,
+    pub change_summary: String,
+    pub updated_by: Uuid,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Document state changed
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StateChanged {
+    pub document_id: DocumentId,
+    pub old_state: DocumentState,
+    pub new_state: DocumentState,
+    pub reason: String,
+    pub changed_by: Uuid,
+    pub changed_at: chrono::DateTime<chrono::Utc>,
+}
 
 /// Document was uploaded
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -85,10 +118,8 @@ impl DocumentArchived {
     }
 }
 
-
-
 /// Domain event enum for all document events
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DocumentDomainEvent {
     /// Document was uploaded
     DocumentUploaded(DocumentUploaded),
@@ -100,4 +131,10 @@ pub enum DocumentDomainEvent {
     DocumentDeleted(DocumentDeleted),
     /// Document was archived
     DocumentArchived(DocumentArchived),
+    /// Document was created
+    DocumentCreated(DocumentCreated),
+    /// Document content was updated
+    ContentUpdated(ContentUpdated),
+    /// Document state changed
+    StateChanged(StateChanged),
 }
