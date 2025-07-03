@@ -1,6 +1,6 @@
 //! Document import/export service
 
-use crate::value_objects::{ImportFormat, ExportFormat, ImportOptions, ExportOptions, DocumentId, DocumentType};
+use crate::value_objects::{DocumentType, ImportOptions, ExportOptions, ImportFormat, ExportFormat};
 use crate::projections::DocumentFullView;
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
@@ -226,12 +226,12 @@ impl ImportExportService {
             if !document.tags.is_empty() {
                 output.push_str("tags:\n");
                 for tag in &document.tags {
-                    output.push_str(&format!("  - {}\n", tag));
+                    output.push_str(&format!("  - {tag}\n"));
                 }
             }
 
             for (key, value) in &document.metadata {
-                output.push_str(&format!("{}: {}\n", key, value));
+                output.push_str(&format!("{key}: {value}\n"));
             }
             
             output.push_str("---\n\n");
@@ -245,7 +245,7 @@ impl ImportExportService {
 
         // Add watermark if specified
         if let Some(watermark) = &options.watermark {
-            output.push_str(&format!("\n\n---\n*{}*", watermark));
+            output.push_str(&format!("\n\n---\n*{watermark}*"));
         }
 
         Ok(output.into_bytes())
@@ -255,7 +255,7 @@ impl ImportExportService {
         let mut output = String::new();
 
         output.push_str(&document.title);
-        output.push_str("\n");
+        output.push('\n');
         output.push_str(&"=".repeat(document.title.len()));
         output.push_str("\n\n");
 
@@ -268,7 +268,7 @@ impl ImportExportService {
         output.push_str(&document.content);
 
         if let Some(watermark) = &options.watermark {
-            output.push_str(&format!("\n\n{}", watermark));
+            output.push_str(&format!("\n\n{watermark}"));
         }
 
         Ok(output.into_bytes())

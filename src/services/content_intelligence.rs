@@ -10,6 +10,12 @@ pub struct EntityExtractionService {
     // In a real implementation, this would use NLP models
 }
 
+impl Default for EntityExtractionService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EntityExtractionService {
     pub fn new() -> Self {
         Self {}
@@ -57,9 +63,9 @@ impl EntityExtractionService {
         let words: Vec<&str> = content.split_whitespace().collect();
         
         for (i, word) in words.iter().enumerate() {
-            if word.chars().next().map_or(false, |c| c.is_uppercase()) && word.len() > 2 {
+            if word.chars().next().is_some_and(|c| c.is_uppercase()) && word.len() > 2 {
                 // Check if next word is also capitalized (likely a full name)
-                if i + 1 < words.len() && words[i + 1].chars().next().map_or(false, |c| c.is_uppercase()) {
+                if i + 1 < words.len() && words[i + 1].chars().next().is_some_and(|c| c.is_uppercase()) {
                     let full_name = format!("{} {}", word, words[i + 1]);
                     entities.push(ExtractedEntity {
                         text: full_name,
@@ -165,6 +171,12 @@ pub struct SummarizationService {
     // In a real implementation, this would use LLM or extractive summarization
 }
 
+impl Default for SummarizationService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SummarizationService {
     pub fn new() -> Self {
         Self {}
@@ -241,6 +253,12 @@ impl SummarizationService {
 /// Service for document classification
 pub struct ClassificationService {
     // In a real implementation, this would use ML models
+}
+
+impl Default for ClassificationService {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ClassificationService {

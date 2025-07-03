@@ -1,6 +1,6 @@
-use cim_domain_document::*;
-use cim_domain::{AggregateRoot, EntityId};
 use cid::Cid;
+use cim_domain::{AggregateRoot, EntityId};
+use cim_domain_document::*;
 
 #[test]
 fn test_document_creation() {
@@ -14,11 +14,18 @@ fn test_document_creation() {
         language: Some("en".to_string()),
     };
 
-    let content_cid = Cid::try_from("bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi").unwrap();
+    let content_cid =
+        Cid::try_from("bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi").unwrap();
 
     let document = Document::new(document_id, info.clone(), content_cid);
 
     assert_eq!(document.id(), document_id);
     assert_eq!(document.version(), 0);
-    assert_eq!(document.get_component::<DocumentInfoComponent>().unwrap().title, "Test Document");
+    assert_eq!(
+        document
+            .get_component::<DocumentInfoComponent>()
+            .unwrap()
+            .title,
+        "Test Document"
+    );
 }

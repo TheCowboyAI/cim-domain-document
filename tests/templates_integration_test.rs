@@ -1,9 +1,7 @@
 //! Integration tests for document template functionality
 
-use cim_domain_document::commands::{CreateDocument, ApplyTemplate};
-use cim_domain_document::value_objects::*;
 use cim_domain_document::services::TemplateService;
-use uuid::Uuid;
+use cim_domain_document::value_objects::*;
 use std::collections::HashMap;
 
 #[tokio::test]
@@ -36,7 +34,8 @@ async fn test_template_workflow() {
 {{outlook}}
 
 ---
-*Generated on {{date}}*"#.to_string(),
+*Generated on {{date}}*"#
+            .to_string(),
         required_variables: vec![
             TemplateVariable {
                 name: "company".to_string(),
@@ -125,7 +124,9 @@ async fn test_template_workflow() {
         version: DocumentVersion::new(1, 0, 0),
     };
 
-    template_service.register_template(template.clone()).unwrap();
+    template_service
+        .register_template(template.clone())
+        .unwrap();
 
     // Apply the template with variables
     let mut variables = HashMap::new();
@@ -138,7 +139,9 @@ async fn test_template_workflow() {
     variables.insert("growth".to_string(), "23".to_string());
     variables.insert("achievements".to_string(), "- Launched new product line\n- Expanded to 3 new markets\n- Achieved 98% customer satisfaction".to_string());
 
-    let result = template_service.apply_template(&template.id, &variables).unwrap();
+    let result = template_service
+        .apply_template(&template.id, &variables)
+        .unwrap();
 
     // Verify the result
     assert!(result.contains("# Acme Corp Quarterly Report - Q4 2024"));
@@ -178,14 +181,18 @@ async fn test_template_validation() {
         version: DocumentVersion::new(1, 0, 0),
     };
 
-    template_service.register_template(template.clone()).unwrap();
+    template_service
+        .register_template(template.clone())
+        .unwrap();
 
     // Test with invalid variables
     let mut invalid_vars = HashMap::new();
     invalid_vars.insert("date".to_string(), "not-a-date".to_string());
     invalid_vars.insert("duration".to_string(), "not-a-number".to_string());
 
-    let errors = template_service.validate_variables(&template.id, &invalid_vars).unwrap();
+    let errors = template_service
+        .validate_variables(&template.id, &invalid_vars)
+        .unwrap();
     assert_eq!(errors.len(), 2);
     assert!(errors.iter().any(|e| e.variable == "date"));
     assert!(errors.iter().any(|e| e.variable == "duration"));
@@ -195,7 +202,9 @@ async fn test_template_validation() {
     valid_vars.insert("date".to_string(), "2024-01-15".to_string());
     valid_vars.insert("duration".to_string(), "60".to_string());
 
-    let errors = template_service.validate_variables(&template.id, &valid_vars).unwrap();
+    let errors = template_service
+        .validate_variables(&template.id, &valid_vars)
+        .unwrap();
     assert_eq!(errors.len(), 0);
 }
 
@@ -234,9 +243,13 @@ async fn test_template_categories() {
         version: DocumentVersion::new(1, 0, 0),
     };
 
-    template_service.register_template(meeting_template).unwrap();
+    template_service
+        .register_template(meeting_template)
+        .unwrap();
     template_service.register_template(report_template).unwrap();
-    template_service.register_template(proposal_template).unwrap();
+    template_service
+        .register_template(proposal_template)
+        .unwrap();
 
     // Find by category
     let meeting_templates = template_service.find_by_category("meetings");
@@ -250,4 +263,4 @@ async fn test_template_categories() {
     // List all templates
     let all_templates = template_service.list_templates();
     assert_eq!(all_templates.len(), 3);
-} 
+}

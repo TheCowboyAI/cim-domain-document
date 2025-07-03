@@ -1,12 +1,11 @@
 //! Integration tests for document version comparison
 
-use cim_domain_document::commands::*;
 use cim_domain_document::events::*;
-use cim_domain_document::services::{VersionComparisonService, ComparisonOptions, DiffAlgorithm};
 use cim_domain_document::projections::DocumentFullView;
+use cim_domain_document::services::{ComparisonOptions, DiffAlgorithm, VersionComparisonService};
 use cim_domain_document::value_objects::*;
-use uuid::Uuid;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_compare_versions_workflow() {
@@ -46,7 +45,8 @@ This document describes the system architecture.
 - Cache Layer
 
 ## Requirements
-The system must handle 1000 requests per second."#.to_string(),
+The system must handle 1000 requests per second."#
+            .to_string(),
         version: DocumentVersion::new(1, 0, 0),
         doc_type: DocumentType::Report,
         tags: vec!["technical".to_string(), "architecture".to_string()],
@@ -73,14 +73,13 @@ This document describes the system architecture for the new platform.
 The system must handle 5000 requests per second.
 
 ## Performance Metrics
-Response time should be under 100ms."#.to_string();
+Response time should be under 100ms."#
+        .to_string();
 
     // Compare versions
-    let result = VersionComparisonService::compare_versions(
-        &doc_v1,
-        &doc_v2,
-        &ComparisonOptions::default(),
-    ).unwrap();
+    let result =
+        VersionComparisonService::compare_versions(&doc_v1, &doc_v2, &ComparisonOptions::default())
+            .unwrap();
 
     // Verify changes detected
     assert!(result.statistics.lines_added > 0);
@@ -120,7 +119,7 @@ async fn test_metadata_comparison() {
         metadata.insert("status".to_string(), "approved".to_string()); // Modified
         metadata.insert("priority".to_string(), "high".to_string()); // Unchanged
         metadata.insert("reviewer".to_string(), "john.doe".to_string()); // Added
-        // "department" removed
+                                                                         // "department" removed
         metadata
     };
 
@@ -133,7 +132,8 @@ async fn test_metadata_comparison() {
             include_formatting: false,
             algorithm: DiffAlgorithm::Myers,
         },
-    ).unwrap();
+    )
+    .unwrap();
 
     // Verify metadata changes
     assert_eq!(result.metadata_changes.len(), 3); // status modified, reviewer added, department removed
@@ -167,7 +167,8 @@ async fn test_different_diff_algorithms() {
             include_formatting: false,
             algorithm: DiffAlgorithm::Myers,
         },
-    ).unwrap();
+    )
+    .unwrap();
 
     // Test Patience algorithm (currently falls back to Myers)
     let patience_result = VersionComparisonService::compare_versions(
@@ -178,7 +179,8 @@ async fn test_different_diff_algorithms() {
             include_formatting: false,
             algorithm: DiffAlgorithm::Patience,
         },
-    ).unwrap();
+    )
+    .unwrap();
 
     // Test Histogram algorithm (currently falls back to Myers)
     let histogram_result = VersionComparisonService::compare_versions(
@@ -189,11 +191,18 @@ async fn test_different_diff_algorithms() {
             include_formatting: false,
             algorithm: DiffAlgorithm::Histogram,
         },
-    ).unwrap();
+    )
+    .unwrap();
 
     // All should produce same results for now
-    assert_eq!(myers_result.statistics.lines_added, patience_result.statistics.lines_added);
-    assert_eq!(myers_result.statistics.lines_added, histogram_result.statistics.lines_added);
+    assert_eq!(
+        myers_result.statistics.lines_added,
+        patience_result.statistics.lines_added
+    );
+    assert_eq!(
+        myers_result.statistics.lines_added,
+        histogram_result.statistics.lines_added
+    );
 }
 
 #[tokio::test]
@@ -201,7 +210,7 @@ async fn test_large_document_comparison() {
     // Create a large document
     let mut content_v1 = String::new();
     for i in 0..1000 {
-        content_v1.push_str(&format!("This is line {} of the document.\n", i));
+        content_v1.push_str(&format!("This is line {i} of the document.\n"));
     }
 
     let mut content_v2 = content_v1.clone();
@@ -210,7 +219,7 @@ async fn test_large_document_comparison() {
     content_v2 = content_v2.replace("line 750", "modified line 750");
     // Add some lines at the end
     for i in 1000..1010 {
-        content_v2.push_str(&format!("This is new line {} of the document.\n", i));
+        content_v2.push_str(&format!("This is new line {i} of the document.\n"));
     }
 
     let doc_v1 = DocumentFullView {
@@ -231,14 +240,12 @@ async fn test_large_document_comparison() {
     doc_v2.content = content_v2;
 
     // Compare large documents
-    let result = VersionComparisonService::compare_versions(
-        &doc_v1,
-        &doc_v2,
-        &ComparisonOptions::default(),
-    ).unwrap();
+    let result =
+        VersionComparisonService::compare_versions(&doc_v1, &doc_v2, &ComparisonOptions::default())
+            .unwrap();
 
     // Verify performance and accuracy
     assert_eq!(result.statistics.lines_added, 12); // 2 modified + 10 new
     assert_eq!(result.statistics.lines_deleted, 2); // 2 original lines replaced
     assert!(result.statistics.similarity_ratio > 0.95); // Most content unchanged
-} 
+}

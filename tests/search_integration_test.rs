@@ -1,10 +1,10 @@
 //! Integration tests for document search functionality
 
-use cim_domain_document::services::DocumentSearchService;
 use cim_domain_document::projections::DocumentFullView;
+use cim_domain_document::services::DocumentSearchService;
 use cim_domain_document::value_objects::*;
-use uuid::Uuid;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_search_workflow() {
@@ -89,13 +89,11 @@ async fn test_search_workflow() {
     let filtered_query = SearchQuery {
         query: "programming".to_string(),
         fields: vec![SearchField::All],
-        filters: vec![
-            SearchFilter {
-                field: "tags".to_string(),
-                operator: FilterOperator::Contains,
-                value: "rust".to_string(),
-            }
-        ],
+        filters: vec![SearchFilter {
+            field: "tags".to_string(),
+            operator: FilterOperator::Contains,
+            value: "rust".to_string(),
+        }],
         sort: SearchSort {
             field: "score".to_string(),
             direction: SortDirection::Descending,
@@ -115,8 +113,8 @@ async fn test_search_pagination() {
     for i in 0..10 {
         let doc = DocumentFullView {
             id: DocumentId::new(),
-            title: format!("Document {}", i),
-            content: format!("This is the content of document number {}", i),
+            title: format!("Document {i}"),
+            content: format!("This is the content of document number {i}"),
             version: DocumentVersion::new(1, 0, 0),
             doc_type: DocumentType::Note,
             tags: vec!["test".to_string()],
@@ -137,10 +135,7 @@ async fn test_search_pagination() {
             field: "score".to_string(),
             direction: SortDirection::Descending,
         },
-        pagination: SearchPagination {
-            page: 0,
-            size: 5,
-        },
+        pagination: SearchPagination { page: 0, size: 5 },
     };
 
     let page1_results = search_service.search(&page1_query).unwrap();
@@ -155,19 +150,22 @@ async fn test_search_pagination() {
             field: "score".to_string(),
             direction: SortDirection::Descending,
         },
-        pagination: SearchPagination {
-            page: 1,
-            size: 5,
-        },
+        pagination: SearchPagination { page: 1, size: 5 },
     };
 
     let page2_results = search_service.search(&page2_query).unwrap();
     assert_eq!(page2_results.len(), 5);
 
     // Ensure different results on different pages
-    let page1_ids: Vec<_> = page1_results.iter().map(|r| r.document_id.clone()).collect();
-    let page2_ids: Vec<_> = page2_results.iter().map(|r| r.document_id.clone()).collect();
-    
+    let page1_ids: Vec<_> = page1_results
+        .iter()
+        .map(|r| r.document_id.clone())
+        .collect();
+    let page2_ids: Vec<_> = page2_results
+        .iter()
+        .map(|r| r.document_id.clone())
+        .collect();
+
     for id in &page1_ids {
         assert!(!page2_ids.contains(id));
     }
@@ -207,16 +205,16 @@ async fn test_search_snippets_and_highlights() {
     assert_eq!(results.len(), 1);
 
     let result = &results[0];
-    
+
     // Check snippet generation (case-insensitive)
     assert!(result.snippet.to_lowercase().contains("search"));
-    
+
     // Check highlights
     assert!(!result.highlights.is_empty());
-    
+
     // Verify highlights are at correct positions
     for (start, end) in &result.highlights {
         let highlighted_text = &doc.content[*start..*end];
         assert_eq!(highlighted_text.to_lowercase(), "search");
     }
-} 
+}

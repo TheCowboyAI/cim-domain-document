@@ -396,6 +396,12 @@ pub enum ConflictType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TemplateId(Uuid);
 
+impl Default for TemplateId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TemplateId {
     pub fn new() -> Self {
         Self(Uuid::new_v4())

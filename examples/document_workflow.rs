@@ -168,10 +168,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let document = query_handler.handle(&get_document).await?;
-    println!("   Document: {}", document.title);
+    println!("   Document: {document.title}");
     println!("   State: {:?}", document.state);
-    println!("   Sections: {}", document.content_blocks.len());
-    println!("   Shared with: {} users\n", document.access_list.len());
+    println!("   Sections: {document.content_blocks.len(}"));
+    println!("   Shared with: {document.access_list.len(} users\n"));
 
     // Step 8: Get document history
     println!("8. Retrieving document history...");
@@ -181,13 +181,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let history = query_handler.handle(&get_history).await?;
-    println!("   Document has {} historical events", history.events.len());
+    println!("   Document has {history.events.len(} historical events"));
 
     for (idx, event) in history.events.iter().enumerate() {
-        println!(
-            "   Event {}: {} at {:?}",
-            idx + 1,
-            event.event_type(),
+        println!("   Event {idx + 1}: {event.event_type(} at {:?}"),
             event.timestamp()
         );
     }
@@ -195,13 +192,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Step 9: Generate document summary
     println!("\n9. Document Summary:");
     println!("   ==================");
-    println!("   Title: {}", document.title);
+    println!("   Title: {document.title}");
     println!("   Type: {:?}", document.document_type);
     println!("   State: {:?}", document.state);
-    println!("   Author: {}", author_id);
-    println!("   Sections: {}", document.content_blocks.len());
-    println!("   Total Events: {}", history.events.len());
-    println!("   Access List: {} users", document.access_list.len());
+    println!("   Author: {author_id}");
+    println!("   Sections: {document.content_blocks.len(}"));
+    println!("   Total Events: {history.events.len(}"));
+    println!("   Access List: {document.access_list.len(} users"));
 
     println!("\n=== Example completed successfully! ===");
     Ok(())

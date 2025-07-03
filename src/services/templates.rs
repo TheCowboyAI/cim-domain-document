@@ -1,6 +1,6 @@
 //! Document template service
 
-use crate::value_objects::{TemplateId, DocumentTemplate, TemplateVariable, VariableType};
+use crate::value_objects::{DocumentTemplate, TemplateId, VariableType};
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
 use regex::Regex;
@@ -9,6 +9,12 @@ use regex::Regex;
 pub struct TemplateService {
     /// Template repository
     templates: HashMap<TemplateId, DocumentTemplate>,
+}
+
+impl Default for TemplateService {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TemplateService {
@@ -41,11 +47,10 @@ impl TemplateService {
 
         // Validate required variables
         for var in &template.required_variables {
-            if var.required && !variables.contains_key(&var.name) {
-                if var.default_value.is_none() {
+            if var.required && !variables.contains_key(&var.name)
+                && var.default_value.is_none() {
                     return Err(anyhow!("Required variable '{}' not provided", var.name));
                 }
-            }
         }
 
         // Apply variable substitution

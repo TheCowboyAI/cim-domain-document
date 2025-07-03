@@ -28,6 +28,12 @@ struct DocumentIndex {
     pub metadata: HashMap<String, String>,
 }
 
+impl Default for DocumentSearchService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DocumentSearchService {
     /// Create new search service
     pub fn new() -> Self {

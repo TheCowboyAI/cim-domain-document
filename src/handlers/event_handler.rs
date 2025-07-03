@@ -84,10 +84,7 @@ impl DocumentEventHandlerImpl {
     }
     
     async fn handle_document_shared(&self, event: &DocumentShared) -> DomainResult<()> {
-        println!("Document shared: {} with {} users", 
-            event.document_id, 
-            event.shared_with.len()
-        );
+        println!("Document shared: {} with {} users", event.document_id, event.shared_with.len());
         
         // Send notifications to newly shared users
         // Update access control projections
@@ -106,10 +103,7 @@ impl DocumentEventHandlerImpl {
     }
     
     async fn handle_document_archived(&self, event: &DocumentArchived) -> DomainResult<()> {
-        println!("Document archived: {} - Reason: {}", 
-            event.document_id, 
-            event.reason
-        );
+        println!("Document archived: {} - Reason: {}", event.document_id, event.reason);
         
         // Remove from active document projections
         // Update archive index

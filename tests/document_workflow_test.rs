@@ -3,11 +3,8 @@
 //! Tests the complete document lifecycle including creation, versioning,
 //! collaboration, and search features.
 
-use cim_domain_document::{
-    commands::*,
-    value_objects::*,
-};
 use cim_domain::Command as DomainCommand;
+use cim_domain_document::{commands::*, value_objects::*};
 use uuid::Uuid;
 
 #[test]
@@ -15,7 +12,7 @@ fn test_document_creation_workflow() {
     // Create a new document
     let document_id = DocumentId::new();
     let author_id = Uuid::new_v4();
-    
+
     let create_cmd = CreateDocument {
         document_id: document_id.clone(),
         document_type: DocumentType::Report,
@@ -36,11 +33,11 @@ fn test_document_creation_workflow() {
 #[test]
 fn test_document_versioning_workflow() {
     let document_id = DocumentId::new();
-    
+
     // Create initial version
     let version_1 = DocumentVersion::new(1, 0, 0);
     assert_eq!(version_1.to_string(), "1.0.0");
-    
+
     // Create a tag for release
     let tag = VersionTag {
         name: "v1.0-release".to_string(),
@@ -49,14 +46,14 @@ fn test_document_versioning_workflow() {
         tagged_by: Uuid::new_v4(),
         tagged_at: chrono::Utc::now(),
     };
-    
+
     let tag_cmd = TagVersion {
         document_id: document_id.clone(),
         tag_name: tag.name.clone(),
         description: tag.description.clone(),
         tagged_by: tag.tagged_by,
     };
-    
+
     assert_eq!(tag_cmd.tag_name, "v1.0-release");
 }
 
@@ -65,7 +62,7 @@ fn test_document_collaboration_workflow() {
     let document_id = DocumentId::new();
     let user1 = Uuid::new_v4();
     let user2 = Uuid::new_v4();
-    
+
     // Share document with another user
     let share_cmd = ShareDocument {
         document_id: document_id.clone(),
@@ -73,7 +70,7 @@ fn test_document_collaboration_workflow() {
         access_level: AccessLevel::Write,
         shared_by: user1,
     };
-    
+
     // Add a comment
     let comment = Comment {
         id: Uuid::new_v4(),
@@ -84,7 +81,7 @@ fn test_document_collaboration_workflow() {
         created_at: chrono::Utc::now(),
         resolved: false,
     };
-    
+
     let comment_cmd = AddComment {
         document_id: document_id.clone(),
         content: comment.content.clone(),
@@ -92,7 +89,7 @@ fn test_document_collaboration_workflow() {
         parent_comment_id: None,
         author_id: user1,
     };
-    
+
     assert_eq!(comment_cmd.content, "Please review section 3.2");
     assert_eq!(share_cmd.access_level, AccessLevel::Write);
 }
@@ -102,14 +99,14 @@ fn test_document_forking_workflow() {
     let original_id = DocumentId::new();
     let fork_id = DocumentId::new();
     let user = Uuid::new_v4();
-    
+
     let fork_cmd = ForkDocument {
         document_id: original_id.clone(),
         fork_id: fork_id.clone(),
         description: "Experimental changes for v2".to_string(),
         forked_by: user,
     };
-    
+
     assert_ne!(original_id, fork_id);
     assert_eq!(fork_cmd.description, "Experimental changes for v2");
 }
@@ -119,7 +116,7 @@ fn test_document_linking_workflow() {
     let doc1 = DocumentId::new();
     let doc2 = DocumentId::new();
     let user = Uuid::new_v4();
-    
+
     // Test different link types
     let link_types = vec![
         LinkType::References,
@@ -128,7 +125,7 @@ fn test_document_linking_workflow() {
         LinkType::DerivedFrom,
         LinkType::PartOf,
     ];
-    
+
     for link_type in link_types {
         let link_cmd = LinkDocuments {
             source_id: doc1.clone(),
@@ -137,7 +134,7 @@ fn test_document_linking_workflow() {
             description: Some(format!("Document {:?} relationship", link_type)),
             linked_by: user,
         };
-        
+
         assert!(link_cmd.description.is_some());
     }
 }
@@ -146,16 +143,36 @@ fn test_document_linking_workflow() {
 fn test_document_state_transitions() {
     let document_id = DocumentId::new();
     let user = Uuid::new_v4();
-    
+
     // Test state transitions
     let states = vec![
-        (DocumentState::Draft, DocumentState::InReview, "Submitting for review"),
-        (DocumentState::InReview, DocumentState::Approved, "All requirements met"),
-        (DocumentState::InReview, DocumentState::Rejected, "Missing section 4"),
-        (DocumentState::Rejected, DocumentState::Draft, "Fixing issues"),
-        (DocumentState::Approved, DocumentState::Archived, "End of fiscal year"),
+        (
+            DocumentState::Draft,
+            DocumentState::InReview,
+            "Submitting for review",
+        ),
+        (
+            DocumentState::InReview,
+            DocumentState::Approved,
+            "All requirements met",
+        ),
+        (
+            DocumentState::InReview,
+            DocumentState::Rejected,
+            "Missing section 4",
+        ),
+        (
+            DocumentState::Rejected,
+            DocumentState::Draft,
+            "Fixing issues",
+        ),
+        (
+            DocumentState::Approved,
+            DocumentState::Archived,
+            "End of fiscal year",
+        ),
     ];
-    
+
     for (_old_state, new_state, reason) in states {
         let change_cmd = ChangeState {
             document_id: document_id.clone(),
@@ -163,7 +180,7 @@ fn test_document_state_transitions() {
             reason: reason.to_string(),
             changed_by: user,
         };
-        
+
         assert_eq!(change_cmd.new_state, new_state);
         assert_eq!(change_cmd.reason, reason);
     }
@@ -173,7 +190,7 @@ fn test_document_state_transitions() {
 fn test_document_content_blocks() {
     let document_id = DocumentId::new();
     let user = Uuid::new_v4();
-    
+
     let blocks = vec![
         ContentBlock {
             id: "intro".to_string(),
@@ -187,19 +204,20 @@ fn test_document_content_blocks() {
             block_type: "section".to_string(),
             title: Some("Financial Overview".to_string()),
             content: "Revenue increased by 15%...".to_string(),
-            metadata: std::collections::HashMap::from([
-                ("charts".to_string(), "revenue-chart.png".to_string()),
-            ]),
+            metadata: std::collections::HashMap::from([(
+                "charts".to_string(),
+                "revenue-chart.png".to_string(),
+            )]),
         },
     ];
-    
+
     let update_cmd = UpdateContent {
         document_id,
         content_blocks: blocks.clone(),
         change_summary: "Added financial section".to_string(),
         updated_by: user,
     };
-    
+
     assert_eq!(update_cmd.content_blocks.len(), 2);
     assert_eq!(update_cmd.content_blocks[0].id, "intro");
 }
@@ -213,17 +231,15 @@ fn test_document_collections() {
         parent_id: None,
         metadata: std::collections::HashMap::new(),
     };
-    
+
     let child = Collection {
         id: Uuid::new_v4(),
         name: "2025 Reports".to_string(),
         description: Some("Reports for fiscal year 2025".to_string()),
         parent_id: Some(parent.id),
-        metadata: std::collections::HashMap::from([
-            ("year".to_string(), "2025".to_string()),
-        ]),
+        metadata: std::collections::HashMap::from([("year".to_string(), "2025".to_string())]),
     };
-    
+
     assert_eq!(child.parent_id, Some(parent.id));
     assert_eq!(child.metadata.get("year"), Some(&"2025".to_string()));
 }
@@ -236,7 +252,7 @@ fn test_access_levels() {
         AccessLevel::Write,
         AccessLevel::Admin,
     ];
-    
+
     // Verify access level hierarchy
     for (i, level) in levels.iter().enumerate() {
         match level {
@@ -246,4 +262,4 @@ fn test_access_levels() {
             AccessLevel::Admin => assert_eq!(i, 3),
         }
     }
-} 
+}

@@ -1,10 +1,10 @@
 //! Integration tests for document archive functionality
 
 use cim_domain_document::commands::*;
-use cim_domain_document::value_objects::*;
 use cim_domain_document::events::*;
-use uuid::Uuid;
+use cim_domain_document::value_objects::*;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_document_lifecycle() {
@@ -52,7 +52,7 @@ async fn test_document_deleted_event() {
 #[tokio::test]
 async fn test_archive_metadata() {
     let document_id = DocumentId::new();
-    
+
     // Archive with retention period
     let archive_cmd = ArchiveDocument {
         document_id: *document_id.as_uuid(),
@@ -68,7 +68,7 @@ async fn test_archive_metadata() {
 #[tokio::test]
 async fn test_document_restored_event() {
     let document_id = DocumentId::new();
-    
+
     // Test the restored event structure
     let event = DocumentRestored {
         document_id: document_id.clone(),
@@ -106,5 +106,8 @@ async fn test_archive_delete_workflow() {
 
     // Verify workflow
     assert_eq!(archive_cmd.reason, "Quarterly cleanup");
-    assert_eq!(delete_event.reason, Some("Retention period expired".to_string()));
-} 
+    assert_eq!(
+        delete_event.reason,
+        Some("Retention period expired".to_string())
+    );
+}
