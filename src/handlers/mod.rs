@@ -2,9 +2,15 @@
 
 mod command_handler;
 mod event_handler;
+mod document_content_handler_simple;
+mod document_version_handler_simple;
+mod document_metadata_handler;
 
 pub use command_handler::{DocumentCommandHandler as DocumentCommandHandlerTrait, DocumentCommandHandlerImpl};
 pub use event_handler::{DocumentEventHandler, DocumentEventHandlerImpl};
+pub use document_content_handler_simple::*;
+pub use document_version_handler_simple::*;
+pub use document_metadata_handler::*;
 
 use crate::events::*;
 

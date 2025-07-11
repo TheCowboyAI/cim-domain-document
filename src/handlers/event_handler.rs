@@ -1,6 +1,14 @@
 //! Document event handlers
 
-use crate::events::*;
+use crate::events::{
+    DocumentDomainEvent, DocumentUploaded, DocumentMetadataUpdated, DocumentShared,
+    DocumentDeleted, DocumentArchived, DocumentCreated, ContentUpdated, StateChanged,
+    DocumentForked, VersionTagged, CommentAdded, DocumentsLinked, DocumentsMerged,
+    VersionRolledBack, EntitiesExtracted, SummaryGenerated, DocumentClassified,
+    TemplateApplied, CollectionCreated, DocumentAddedToCollection, DocumentImported,
+    DocumentExported, DocumentRestored, VersionsCompared, DocumentContentUpdated,
+    DocumentTagged, DocumentVersionCreated, DocumentVersionRestored
+};
 use cim_domain::DomainResult;
 use async_trait::async_trait;
 
@@ -56,6 +64,10 @@ impl DocumentEventHandler for DocumentEventHandlerImpl {
             DocumentDomainEvent::DocumentExported(e) => self.handle_document_exported(e).await,
             DocumentDomainEvent::DocumentRestored(e) => self.handle_document_restored(e).await,
             DocumentDomainEvent::VersionsCompared(e) => self.handle_versions_compared(e).await,
+            DocumentDomainEvent::DocumentContentUpdated(e) => self.handle_document_content_updated(e).await,
+            DocumentDomainEvent::DocumentTagged(e) => self.handle_document_tagged(e).await,
+            DocumentDomainEvent::DocumentVersionCreated(e) => self.handle_document_version_created(e).await,
+            DocumentDomainEvent::DocumentVersionRestored(e) => self.handle_document_version_restored(e).await,
         }
     }
 }
@@ -200,6 +212,26 @@ impl DocumentEventHandlerImpl {
     }
 
     async fn handle_versions_compared(&self, _event: &VersionsCompared) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_document_content_updated(&self, _event: &DocumentContentUpdated) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_document_tagged(&self, _event: &DocumentTagged) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_document_version_created(&self, _event: &DocumentVersionCreated) -> DomainResult<()> {
+        // Implementation needed
+        Ok(())
+    }
+
+    async fn handle_document_version_restored(&self, _event: &DocumentVersionRestored) -> DomainResult<()> {
         // Implementation needed
         Ok(())
     }

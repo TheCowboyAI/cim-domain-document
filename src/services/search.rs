@@ -61,11 +61,11 @@ impl DocumentSearchService {
     pub fn search(&self, query: &SearchQuery) -> Result<Vec<SearchResult>> {
         let mut results = Vec::new();
 
-        for (doc_id, index) in &self.index {
+        for (_, index) in &self.index {
             if self.matches_query(index, query) {
                 let score = self.calculate_score(index, &query.query);
                 results.push(SearchResult {
-                    document_id: doc_id.clone(),
+                    document_id: index.document_id.clone(),
                     title: index.title.clone(),
                     snippet: self.generate_snippet(&index.content, &query.query),
                     score,

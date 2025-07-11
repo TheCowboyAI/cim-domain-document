@@ -54,12 +54,13 @@ pub struct DocumentMetadata {
     pub title: String,
     pub description: Option<String>,
     pub tags: Vec<String>,
-    pub custom: HashMap<String, String>,
+    pub custom_attributes: HashMap<String, serde_json::Value>,
     pub mime_type: Option<String>,
     pub size_bytes: Option<u64>,
     pub language: Option<String>,
     pub category: Option<String>,
     pub subcategories: Option<Vec<String>>,
+    pub filename: Option<String>,
 }
 
 /// Document type

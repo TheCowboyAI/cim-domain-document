@@ -172,8 +172,10 @@ pub struct SummaryGenerated {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DocumentClassified {
     pub document_id: DocumentId,
-    pub classifications: Vec<Classification>,
-    pub classified_by: String, // System or user ID
+    pub document_type: DocumentType,
+    pub category: String,
+    pub subcategories: Vec<String>,
+    pub classified_by: String,
     pub classified_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -182,6 +184,51 @@ pub struct Classification {
     pub category: String,
     pub confidence: f32,
     pub labels: Vec<String>,
+}
+
+/// Document content was updated (with CID tracking)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentContentUpdated {
+    pub document_id: DocumentId,
+    pub new_content_cid: Cid,
+    pub previous_content_cid: Cid,
+    pub updated_by: String,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub update_reason: Option<String>,
+}
+
+/// Document was tagged
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentTagged {
+    pub document_id: DocumentId,
+    pub tags: Vec<String>,
+    pub all_tags: Vec<String>,
+    pub tagged_by: String,
+    pub tagged_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Document version was created
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentVersionCreated {
+    pub document_id: DocumentId,
+    pub version_number: String,
+    pub content_cid: Cid,
+    pub previous_version: String,
+    pub change_summary: String,
+    pub created_by: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Document version was restored
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentVersionRestored {
+    pub document_id: DocumentId,
+    pub restored_version: String,
+    pub new_version: String,
+    pub previous_version: String,
+    pub restored_by: String,
+    pub restored_at: chrono::DateTime<chrono::Utc>,
+    pub reason: String,
 }
 
 /// Template was applied
@@ -337,6 +384,14 @@ pub enum DocumentDomainEvent {
     SummaryGenerated(SummaryGenerated),
     /// Document was classified
     DocumentClassified(DocumentClassified),
+    /// Document content was updated (with CID tracking)
+    DocumentContentUpdated(DocumentContentUpdated),
+    /// Document was tagged
+    DocumentTagged(DocumentTagged),
+    /// Document version was created
+    DocumentVersionCreated(DocumentVersionCreated),
+    /// Document version was restored
+    DocumentVersionRestored(DocumentVersionRestored),
     /// Template was applied
     TemplateApplied(TemplateApplied),
     /// Collection was created
