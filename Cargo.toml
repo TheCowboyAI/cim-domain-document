@@ -13,7 +13,7 @@ categories = ["data-structures", "asynchronous"]
 # Core dependencies
 cim-domain = { path = "../cim-domain" }
 cim-infrastructure = { path = "../cim-infrastructure" }
-cim-ipld = { path = "../cim-ipld" }
+cim-ipld = { path = "../cim-domain/crates/cim-ipld" }
 
 # Async runtime
 tokio = { version = "1.41", features = ["full"] }
