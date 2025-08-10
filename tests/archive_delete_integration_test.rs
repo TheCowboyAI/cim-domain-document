@@ -10,7 +10,7 @@ use uuid::Uuid;
 async fn test_document_lifecycle() {
     // Create a document
     let document_id = DocumentId::new();
-    let create_cmd = CreateDocument {
+    let _create_cmd = CreateDocument {
         document_id: document_id.clone(),
         title: "Important Document".to_string(),
         document_type: DocumentType::Report,

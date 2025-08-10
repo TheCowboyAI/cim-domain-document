@@ -1,5 +1,11 @@
 //! Document domain commands
 
+pub mod edit_commands;
+pub mod ingestion_commands;
+
+pub use edit_commands::*;
+pub use ingestion_commands::*;
+
 use cim_domain::Command as DomainCommand;
 use cim_domain::EntityId;
 use crate::aggregate::{
@@ -513,3 +519,706 @@ impl DomainCommand for ExportDocument {
 }
 
 impl Command for ExportDocument {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::value_objects::*;
+    use std::collections::HashMap;
+    use uuid::Uuid;
+    
+    // Helper to create test document info component
+    fn create_test_info() -> DocumentInfoComponent {
+        DocumentInfoComponent {
+            title: "Test Document".to_string(),
+            description: Some("Test description".to_string()),
+            mime_type: "text/plain".to_string(),
+            filename: Some("test.txt".to_string()),
+            size_bytes: 1024,
+            language: Some("en".to_string()),
+        }
+    }
+    
+    // Helper to create test CID
+    fn create_test_cid() -> Cid {
+        Cid::try_from("bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi").unwrap()
+    }
+    
+    // Helper to create test metadata
+    fn create_test_metadata() -> DocumentMetadata {
+        DocumentMetadata {
+            title: "Test Document".to_string(),
+            description: Some("Test description".to_string()),
+            tags: vec!["test".to_string()],
+            custom_attributes: HashMap::new(),
+            mime_type: Some("text/plain".to_string()),
+            size_bytes: Some(1024),
+            language: Some("en".to_string()),
+            category: Some("test".to_string()),
+            subcategories: Some(vec!["unit".to_string()]),
+            filename: Some("test.txt".to_string()),
+        }
+    }
+
+    #[test]
+    fn test_upload_document_command() {
+        // US-005, US-006: Test command validation and serialization
+        let doc_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+        let content_cid = create_test_cid();
+        
+        let command = UploadDocument {
+            document_id: doc_id,
+            info: create_test_info(),
+            content_cid,
+            is_chunked: false,
+            chunk_cids: vec![],
+            uploaded_by: user_id,
+        };
+        
+        // Test command properties
+        assert_eq!(command.document_id, doc_id);
+        assert!(!command.is_chunked);
+        assert_eq!(command.uploaded_by, user_id);
+        assert_eq!(command.content_cid, content_cid);
+        
+        // Test aggregate ID extraction
+        let aggregate_id = command.aggregate_id().unwrap();
+        assert_eq!(*aggregate_id.as_uuid(), doc_id);
+        
+        // Test serialization
+        let serialized = serde_json::to_string(&command).unwrap();
+        assert!(serialized.contains("Test Document"));
+        
+        // Test deserialization
+        let deserialized: UploadDocument = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deserialized.document_id, doc_id);
+        assert_eq!(deserialized.info.title, "Test Document");
+    }
+
+    #[test]
+    fn test_upload_document_chunked() {
+        // US-007: Test edge case - chunked document upload
+        let chunk_cids = vec![create_test_cid(), create_test_cid()];
+        
+        let command = UploadDocument {
+            document_id: Uuid::new_v4(),
+            info: create_test_info(),
+            content_cid: create_test_cid(),
+            is_chunked: true,
+            chunk_cids: chunk_cids.clone(),
+            uploaded_by: Uuid::new_v4(),
+        };
+        
+        assert!(command.is_chunked);
+        assert_eq!(command.chunk_cids.len(), 2);
+        assert_eq!(command.chunk_cids, chunk_cids);
+    }
+
+    #[test]
+    fn test_classify_document_command() {
+        // US-005: Test command validation
+        let doc_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+        
+        let command = ClassifyDocument {
+            document_id: doc_id,
+            document_type: "Contract".to_string(),
+            category: "Legal".to_string(),
+            subcategories: vec!["NDA".to_string(), "Service Agreement".to_string()],
+            tags: vec!["confidential".to_string(), "legal".to_string()],
+            confidentiality: ConfidentialityLevel::Confidential,
+            classified_by: user_id,
+        };
+        
+        assert_eq!(command.document_type, "Contract");
+        assert_eq!(command.category, "Legal");
+        assert_eq!(command.subcategories.len(), 2);
+        assert_eq!(command.tags.len(), 2);
+        assert!(matches!(command.confidentiality, ConfidentialityLevel::Confidential));
+        
+        // Test aggregate ID
+        let aggregate_id = command.aggregate_id().unwrap();
+        assert_eq!(*aggregate_id.as_uuid(), doc_id);
+    }
+
+    #[test]
+    fn test_create_document_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let author_id = Uuid::new_v4();
+        let mut metadata = HashMap::new();
+        metadata.insert("department".to_string(), "Engineering".to_string());
+        
+        let command = CreateDocument {
+            document_id: doc_id.clone(),
+            document_type: DocumentType::Report,
+            title: "Quarterly Report".to_string(),
+            author_id,
+            metadata: metadata.clone(),
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.title, "Quarterly Report");
+        assert!(matches!(command.document_type, DocumentType::Report));
+        assert_eq!(command.author_id, author_id);
+        assert_eq!(command.metadata, metadata);
+        
+        // Test aggregate ID extraction from DocumentId
+        let aggregate_id = command.aggregate_id().unwrap();
+        assert_eq!(aggregate_id.as_uuid(), doc_id.as_uuid());
+    }
+
+    #[test]
+    fn test_update_content_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        
+        let content_blocks = vec![
+            ContentBlock {
+                id: "block1".to_string(),
+                block_type: "paragraph".to_string(),
+                title: Some("Introduction".to_string()),
+                content: "This is the introduction".to_string(),
+                metadata: HashMap::new(),
+            }
+        ];
+        
+        let command = UpdateContent {
+            document_id: doc_id.clone(),
+            content_blocks: content_blocks.clone(),
+            change_summary: "Added introduction section".to_string(),
+            updated_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.content_blocks.len(), 1);
+        assert_eq!(command.content_blocks[0].id, "block1");
+        assert_eq!(command.change_summary, "Added introduction section");
+        assert_eq!(command.updated_by, user_id);
+    }
+
+    #[test]
+    fn test_share_document_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let share_with = Uuid::new_v4();
+        let shared_by = Uuid::new_v4();
+        
+        let command = ShareDocument {
+            document_id: doc_id.clone(),
+            share_with,
+            access_level: AccessLevel::Write,
+            shared_by,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.share_with, share_with);
+        assert!(matches!(command.access_level, AccessLevel::Write));
+        assert_eq!(command.shared_by, shared_by);
+    }
+
+    #[test]
+    fn test_change_state_command() {
+        // US-005: Test command validation for state transitions
+        let doc_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        
+        let command = ChangeState {
+            document_id: doc_id.clone(),
+            new_state: DocumentState::InReview,
+            reason: "Ready for review".to_string(),
+            changed_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert!(matches!(command.new_state, DocumentState::InReview));
+        assert_eq!(command.reason, "Ready for review");
+        assert_eq!(command.changed_by, user_id);
+    }
+
+    #[test]
+    fn test_update_document_metadata_command() {
+        // US-005: Test command validation
+        let doc_id = Uuid::new_v4();
+        let metadata = create_test_metadata();
+        
+        let command = UpdateDocumentMetadata {
+            document_id: doc_id,
+            metadata: metadata.clone(),
+            updated_by: "user123".to_string(),
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.metadata.title, "Test Document");
+        assert_eq!(command.updated_by, "user123");
+        
+        // Test serialization
+        let serialized = serde_json::to_string(&command).unwrap();
+        assert!(serialized.contains("Test Document"));
+    }
+
+    #[test]
+    fn test_archive_document_command() {
+        // US-005: Test command validation
+        let doc_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+        
+        let command = ArchiveDocument {
+            document_id: doc_id,
+            reason: "Project completed".to_string(),
+            retention_days: Some(2555), // 7 years
+            archived_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.reason, "Project completed");
+        assert_eq!(command.retention_days, Some(2555));
+        assert_eq!(command.archived_by, user_id);
+    }
+
+    #[test]
+    fn test_archive_document_no_retention() {
+        // US-007: Test edge case - archive without retention period
+        let command = ArchiveDocument {
+            document_id: Uuid::new_v4(),
+            reason: "Immediate archive".to_string(),
+            retention_days: None,
+            archived_by: Uuid::new_v4(),
+        };
+        
+        assert!(command.retention_days.is_none());
+    }
+
+    #[test]
+    fn test_fork_document_command() {
+        // US-005: Test command validation
+        let original_id = DocumentId::new();
+        let fork_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        
+        let command = ForkDocument {
+            document_id: original_id.clone(),
+            fork_id: fork_id.clone(),
+            description: "Fork for feature development".to_string(),
+            forked_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, original_id);
+        assert_eq!(command.fork_id, fork_id);
+        assert_eq!(command.description, "Fork for feature development");
+        assert_eq!(command.forked_by, user_id);
+        
+        // Verify different IDs
+        assert_ne!(command.document_id, command.fork_id);
+    }
+
+    #[test]
+    fn test_tag_version_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        
+        let command = TagVersion {
+            document_id: doc_id.clone(),
+            tag_name: "v1.0.0".to_string(),
+            description: Some("First stable release".to_string()),
+            tagged_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.tag_name, "v1.0.0");
+        assert_eq!(command.description, Some("First stable release".to_string()));
+        assert_eq!(command.tagged_by, user_id);
+    }
+
+    #[test]
+    fn test_tag_version_no_description() {
+        // US-007: Test edge case - tag without description
+        let command = TagVersion {
+            document_id: DocumentId::new(),
+            tag_name: "milestone".to_string(),
+            description: None,
+            tagged_by: Uuid::new_v4(),
+        };
+        
+        assert!(command.description.is_none());
+    }
+
+    #[test]
+    fn test_add_comment_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let author_id = Uuid::new_v4();
+        
+        let command = AddComment {
+            document_id: doc_id.clone(),
+            content: "This section needs revision".to_string(),
+            block_id: Some("block1".to_string()),
+            parent_comment_id: None,
+            author_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.content, "This section needs revision");
+        assert_eq!(command.block_id, Some("block1".to_string()));
+        assert!(command.parent_comment_id.is_none());
+        assert_eq!(command.author_id, author_id);
+    }
+
+    #[test]
+    fn test_add_comment_threaded() {
+        // US-007: Test edge case - threaded comment
+        let parent_comment_id = Uuid::new_v4();
+        
+        let command = AddComment {
+            document_id: DocumentId::new(),
+            content: "I agree with your point".to_string(),
+            block_id: None,
+            parent_comment_id: Some(parent_comment_id),
+            author_id: Uuid::new_v4(),
+        };
+        
+        assert_eq!(command.parent_comment_id, Some(parent_comment_id));
+        assert!(command.block_id.is_none());
+    }
+
+    #[test]
+    fn test_link_documents_command() {
+        // US-005: Test command validation
+        let source_id = DocumentId::new();
+        let target_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        
+        let command = LinkDocuments {
+            source_id: source_id.clone(),
+            target_id: target_id.clone(),
+            link_type: LinkType::References,
+            description: Some("References for background information".to_string()),
+            linked_by: user_id,
+        };
+        
+        assert_eq!(command.source_id, source_id);
+        assert_eq!(command.target_id, target_id);
+        assert!(matches!(command.link_type, LinkType::References));
+        assert_eq!(command.description, Some("References for background information".to_string()));
+        assert_eq!(command.linked_by, user_id);
+        
+        // Aggregate ID should be source document
+        let aggregate_id = command.aggregate_id().unwrap();
+        assert_eq!(aggregate_id.as_uuid(), source_id.as_uuid());
+    }
+
+    #[test]
+    fn test_merge_documents_command() {
+        // US-005: Test command validation
+        let target_id = DocumentId::new();
+        let source_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        
+        let command = MergeDocuments {
+            target_id: target_id.clone(),
+            source_id: source_id.clone(),
+            strategy: MergeStrategy::ThreeWay,
+            conflict_resolution: ConflictResolution::Manual,
+            merged_by: user_id,
+        };
+        
+        assert_eq!(command.target_id, target_id);
+        assert_eq!(command.source_id, source_id);
+        assert!(matches!(command.strategy, MergeStrategy::ThreeWay));
+        assert!(matches!(command.conflict_resolution, ConflictResolution::Manual));
+        assert_eq!(command.merged_by, user_id);
+        
+        // Aggregate ID should be target document
+        let aggregate_id = command.aggregate_id().unwrap();
+        assert_eq!(aggregate_id.as_uuid(), target_id.as_uuid());
+    }
+
+    #[test]
+    fn test_rollback_version_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let target_version = DocumentVersion::new(1, 2, 3);
+        let user_id = Uuid::new_v4();
+        
+        let command = RollbackVersion {
+            document_id: doc_id.clone(),
+            target_version: target_version.clone(),
+            reason: "Rollback due to critical bug".to_string(),
+            rolled_back_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.target_version, target_version);
+        assert_eq!(command.reason, "Rollback due to critical bug");
+        assert_eq!(command.rolled_back_by, user_id);
+    }
+
+    #[test]
+    fn test_extract_entities_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        let options = ExtractionOptions {
+            extract_entities: true,
+            extract_concepts: true,
+            extract_keywords: false,
+            confidence_threshold: 0.8,
+            max_entities: Some(100),
+        };
+        
+        let command = ExtractEntities {
+            document_id: doc_id.clone(),
+            options: options.clone(),
+            requested_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.options.confidence_threshold, 0.8);
+        assert_eq!(command.options.max_entities, Some(100));
+        assert!(!command.options.extract_keywords);
+        assert_eq!(command.requested_by, user_id);
+    }
+
+    #[test]
+    fn test_generate_summary_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        
+        let command = GenerateSummary {
+            document_id: doc_id.clone(),
+            length: SummaryLength::Standard,
+            language: Some("en".to_string()),
+            requested_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert!(matches!(command.length, SummaryLength::Standard));
+        assert_eq!(command.language, Some("en".to_string()));
+        assert_eq!(command.requested_by, user_id);
+    }
+
+    #[test]
+    fn test_generate_summary_custom_length() {
+        // US-007: Test edge case - custom summary length
+        let command = GenerateSummary {
+            document_id: DocumentId::new(),
+            length: SummaryLength::Custom(250),
+            language: None,
+            requested_by: Uuid::new_v4(),
+        };
+        
+        assert!(matches!(command.length, SummaryLength::Custom(250)));
+        assert!(command.language.is_none());
+    }
+
+    #[test]
+    fn test_apply_template_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let template_id = TemplateId::new();
+        let user_id = Uuid::new_v4();
+        
+        let mut variables = HashMap::new();
+        variables.insert("title".to_string(), "Monthly Report".to_string());
+        variables.insert("date".to_string(), "2024-01-15".to_string());
+        
+        let command = ApplyTemplate {
+            document_id: doc_id.clone(),
+            template_id,
+            variables: variables.clone(),
+            applied_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.template_id, template_id);
+        assert_eq!(command.variables, variables);
+        assert_eq!(command.applied_by, user_id);
+    }
+
+    #[test]
+    fn test_create_collection_command() {
+        // US-005: Test command validation
+        let collection_id = Uuid::new_v4();
+        let parent_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+        
+        let mut metadata = HashMap::new();
+        metadata.insert("department".to_string(), "Legal".to_string());
+        
+        let command = CreateCollection {
+            collection_id,
+            name: "Legal Documents".to_string(),
+            description: Some("All legal-related documents".to_string()),
+            parent_id: Some(parent_id),
+            metadata: metadata.clone(),
+            created_by: user_id,
+        };
+        
+        assert_eq!(command.collection_id, collection_id);
+        assert_eq!(command.name, "Legal Documents");
+        assert_eq!(command.parent_id, Some(parent_id));
+        assert_eq!(command.metadata, metadata);
+        assert_eq!(command.created_by, user_id);
+        
+        // Collection commands don't have aggregate IDs
+        assert!(command.aggregate_id().is_none());
+    }
+
+    #[test]
+    fn test_add_to_collection_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let collection_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+        
+        let command = AddToCollection {
+            document_id: doc_id.clone(),
+            collection_id,
+            added_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert_eq!(command.collection_id, collection_id);
+        assert_eq!(command.added_by, user_id);
+    }
+
+    #[test]
+    fn test_import_document_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        let content = b"# Test Document\nThis is test content.".to_vec();
+        let options = ImportOptions::default();
+        
+        let command = ImportDocument {
+            document_id: doc_id.clone(),
+            source_format: ImportFormat::Markdown,
+            content: content.clone(),
+            options: options.clone(),
+            imported_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert!(matches!(command.source_format, ImportFormat::Markdown));
+        assert_eq!(command.content, content);
+        assert_eq!(command.imported_by, user_id);
+    }
+
+    #[test]
+    fn test_export_document_command() {
+        // US-005: Test command validation
+        let doc_id = DocumentId::new();
+        let user_id = Uuid::new_v4();
+        let options = ExportOptions::default();
+        
+        let command = ExportDocument {
+            document_id: doc_id.clone(),
+            target_format: ExportFormat::Pdf,
+            options: options.clone(),
+            exported_by: user_id,
+        };
+        
+        assert_eq!(command.document_id, doc_id);
+        assert!(matches!(command.target_format, ExportFormat::Pdf));
+        assert_eq!(command.exported_by, user_id);
+    }
+
+    #[test]
+    fn test_all_commands_implement_required_traits() {
+        // US-006: Test that all commands implement required traits
+        
+        // Test that commands implement Debug
+        let upload_cmd = UploadDocument {
+            document_id: Uuid::new_v4(),
+            info: create_test_info(),
+            content_cid: create_test_cid(),
+            is_chunked: false,
+            chunk_cids: vec![],
+            uploaded_by: Uuid::new_v4(),
+        };
+        
+        // Should not panic - Debug is implemented
+        let debug_str = format!("{:?}", upload_cmd);
+        assert!(debug_str.contains("UploadDocument"));
+        
+        // Test Clone
+        let cloned_cmd = upload_cmd.clone();
+        assert_eq!(cloned_cmd.document_id, upload_cmd.document_id);
+        
+        // Test that all commands implement the Command trait
+        fn assert_command<T: Command>(_: &T) {}
+        
+        assert_command(&upload_cmd);
+        assert_command(&ClassifyDocument {
+            document_id: Uuid::new_v4(),
+            document_type: "Test".to_string(),
+            category: "Test".to_string(),
+            subcategories: vec![],
+            tags: vec![],
+            confidentiality: ConfidentialityLevel::Internal,
+            classified_by: Uuid::new_v4(),
+        });
+    }
+
+    #[test]
+    fn test_command_serialization_edge_cases() {
+        // US-007: Test edge cases in serialization
+        
+        // Test command with empty collections
+        let command = ClassifyDocument {
+            document_id: Uuid::new_v4(),
+            document_type: "Unknown".to_string(),
+            category: "".to_string(),
+            subcategories: vec![],
+            tags: vec![],
+            confidentiality: ConfidentialityLevel::Public,
+            classified_by: Uuid::new_v4(),
+        };
+        
+        let serialized = serde_json::to_string(&command).unwrap();
+        let deserialized: ClassifyDocument = serde_json::from_str(&serialized).unwrap();
+        
+        assert_eq!(deserialized.category, "");
+        assert!(deserialized.subcategories.is_empty());
+        assert!(deserialized.tags.is_empty());
+    }
+
+    #[test]
+    fn test_command_aggregate_id_consistency() {
+        // US-006: Test that aggregate ID extraction is consistent
+        let doc_id = DocumentId::new();
+        
+        let commands: Vec<Box<dyn DomainCommand<Aggregate = crate::Document>>> = vec![
+            Box::new(CreateDocument {
+                document_id: doc_id.clone(),
+                document_type: DocumentType::Text,
+                title: "Test".to_string(),
+                author_id: Uuid::new_v4(),
+                metadata: HashMap::new(),
+            }),
+            Box::new(UpdateContent {
+                document_id: doc_id.clone(),
+                content_blocks: vec![],
+                change_summary: "Test".to_string(),
+                updated_by: Uuid::new_v4(),
+            }),
+            Box::new(ShareDocument {
+                document_id: doc_id.clone(),
+                share_with: Uuid::new_v4(),
+                access_level: AccessLevel::Read,
+                shared_by: Uuid::new_v4(),
+            }),
+        ];
+        
+        // All commands should return the same aggregate ID
+        let expected_id = *doc_id.as_uuid();
+        for command in commands {
+            let aggregate_id = command.aggregate_id().unwrap();
+            assert_eq!(*aggregate_id.as_uuid(), expected_id);
+        }
+    }
+}

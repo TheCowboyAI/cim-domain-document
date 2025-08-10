@@ -141,7 +141,7 @@ fn test_document_aggregate_operations() {
 #[test]
 fn test_value_objects() {
     // Test DocumentId
-    let doc_id = DocumentId::new();
+    let _doc_id = DocumentId::new();
     let uuid = Uuid::new_v4();
     let doc_id_from_uuid = DocumentId::from(uuid);
     assert_eq!(doc_id_from_uuid.as_uuid(), &uuid);

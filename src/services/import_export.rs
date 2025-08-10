@@ -1,6 +1,6 @@
 //! Document import/export service
 
-use crate::value_objects::{DocumentId, DocumentType, ImportOptions, ExportOptions, ImportFormat, ExportFormat};
+use crate::value_objects::{DocumentId, DocumentType, ImportOptions, ExportOptions, ImportFormat, ExportFormat}; // DocumentId used in tests
 use crate::projections::DocumentFullView;
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
@@ -358,14 +358,45 @@ mod tests {
     use crate::value_objects::DocumentVersion;
     use uuid::Uuid;
 
+    // Helper functions for test data
+    fn create_test_document() -> DocumentFullView {
+        let mut metadata = HashMap::new();
+        metadata.insert("category".to_string(), "testing".to_string());
+        metadata.insert("priority".to_string(), "high".to_string());
+
+        DocumentFullView {
+            id: DocumentId::new(),
+            title: "Test Document".to_string(),
+            content: "This is the main content of the document.\n\nIt has multiple paragraphs.".to_string(),
+            version: DocumentVersion::new(1, 2, 3),
+            doc_type: DocumentType::Article,
+            tags: vec!["test".to_string(), "sample".to_string()],
+            author: Uuid::new_v4(),
+            metadata,
+            created_at: chrono::DateTime::parse_from_rfc3339("2023-01-01T00:00:00Z").unwrap().with_timezone(&chrono::Utc),
+            updated_at: chrono::DateTime::parse_from_rfc3339("2023-01-02T00:00:00Z").unwrap().with_timezone(&chrono::Utc),
+        }
+    }
+
+    fn create_export_options(include_metadata: bool, watermark: Option<String>) -> ExportOptions {
+        ExportOptions {
+            include_metadata,
+            include_history: false,
+            include_comments: false,
+            watermark,
+            custom_options: HashMap::new(),
+        }
+    }
+
+    // IMPORT TESTS
+
     #[test]
-    fn test_import_markdown() {
+    fn test_import_markdown_with_frontmatter() {
+        // US-018: Test markdown import with YAML frontmatter
         let markdown = r#"---
 title: Test Document
 author: John Doe
-tags:
-  - test
-  - example
+category: example
 ---
 
 # Test Document
@@ -380,33 +411,645 @@ This is a test document with some content."#;
 
         assert_eq!(imported.title, "Test Document");
         assert_eq!(imported.metadata.get("author"), Some(&"John Doe".to_string()));
+        assert_eq!(imported.metadata.get("category"), Some(&"example".to_string()));
         assert!(imported.content.contains("This is a test document"));
+        assert_eq!(imported.doc_type, DocumentType::Report);
     }
 
     #[test]
-    fn test_export_markdown() {
+    fn test_import_markdown_without_frontmatter() {
+        // US-018: Test markdown import without frontmatter
+        let markdown = r#"# Main Title
+
+This is content without frontmatter.
+
+## Section 2
+
+More content here."#;
+
+        let imported = ImportExportService::import_document(
+            markdown.as_bytes(),
+            &ImportFormat::Markdown,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "Main Title");
+        assert!(imported.metadata.is_empty());
+        assert!(imported.content.contains("This is content without frontmatter"));
+        assert!(imported.content.contains("## Section 2"));
+    }
+
+    #[test]
+    fn test_import_markdown_no_title_fallback() {
+        // US-020: Test markdown import with no title (fallback to "Untitled")
+        let markdown = r#"This is just content without any title or heading."#;
+
+        let imported = ImportExportService::import_document(
+            markdown.as_bytes(),
+            &ImportFormat::Markdown,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "Untitled");
+        assert_eq!(imported.content, "This is just content without any title or heading.");
+    }
+
+    #[test]
+    fn test_import_markdown_invalid_utf8() {
+        // US-020: Test markdown import with invalid UTF-8
+        let invalid_bytes = vec![0xFF, 0xFE, 0xFD];
+
+        let result = ImportExportService::import_document(
+            &invalid_bytes,
+            &ImportFormat::Markdown,
+            &ImportOptions::default(),
+        );
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Invalid UTF-8"));
+    }
+
+    #[test]
+    fn test_import_plain_text_with_title() {
+        // US-018: Test plain text import with title on first line
+        let text = r#"Document Title
+This is the body content.
+With multiple lines of text."#;
+
+        let imported = ImportExportService::import_document(
+            text.as_bytes(),
+            &ImportFormat::PlainText,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "Document Title");
+        assert_eq!(imported.content, "This is the body content.\nWith multiple lines of text.");
+        assert_eq!(imported.doc_type, DocumentType::Note);
+        assert!(imported.metadata.is_empty());
+        assert!(imported.tags.is_empty());
+    }
+
+    #[test]
+    fn test_import_plain_text_single_line() {
+        // US-020: Test plain text import with single line
+        let text = "Single line content";
+
+        let imported = ImportExportService::import_document(
+            text.as_bytes(),
+            &ImportFormat::PlainText,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "Single line content");
+        assert_eq!(imported.content, "Single line content");
+    }
+
+    #[test]
+    fn test_import_plain_text_empty() {
+        // US-020: Test plain text import with empty content
+        let text = "";
+
+        let imported = ImportExportService::import_document(
+            text.as_bytes(),
+            &ImportFormat::PlainText,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "Untitled");
+        assert_eq!(imported.content, "");
+    }
+
+    #[test]
+    fn test_import_html_with_title() {
+        // US-018: Test HTML import with title tag
+        let html = r#"<!DOCTYPE html>
+<html>
+<head>
+    <title>HTML Document Title</title>
+</head>
+<body>
+    <h1>Main Heading</h1>
+    <p>This is a paragraph.</p>
+    <br>
+    <p>Another paragraph with <strong>bold text</strong>.</p>
+</body>
+</html>"#;
+
+        let imported = ImportExportService::import_document(
+            html.as_bytes(),
+            &ImportFormat::Html,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "HTML Document Title");
+        assert!(imported.content.contains("Main Heading"));
+        assert!(imported.content.contains("This is a paragraph"));
+        assert!(imported.content.contains("Another paragraph with bold text"));
+        assert_eq!(imported.doc_type, DocumentType::Article);
+    }
+
+    #[test]
+    fn test_import_html_no_title() {
+        // US-020: Test HTML import without title tag
+        let html = r#"<html><body><p>Content without title</p></body></html>"#;
+
+        let imported = ImportExportService::import_document(
+            html.as_bytes(),
+            &ImportFormat::Html,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "Untitled");
+        assert!(imported.content.contains("Content without title"));
+    }
+
+    #[test]
+    fn test_import_html_malformed_title() {
+        // US-020: Test HTML import with malformed title tag
+        let html = r#"<html><head><title>Incomplete Title"#;
+
+        let imported = ImportExportService::import_document(
+            html.as_bytes(),
+            &ImportFormat::Html,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "Untitled");
+    }
+
+    #[test]
+    fn test_import_json_complete() {
+        // US-018: Test JSON import with complete structure
+        let json = r#"{
+            "title": "JSON Document",
+            "content": "This is JSON content",
+            "type": "article",
+            "tags": ["json", "test", "import"],
+            "metadata": {
+                "author": "Test Author",
+                "priority": "high"
+            }
+        }"#;
+
+        let imported = ImportExportService::import_document(
+            json.as_bytes(),
+            &ImportFormat::Json,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "JSON Document");
+        assert_eq!(imported.content, "This is JSON content");
+        assert_eq!(imported.doc_type, DocumentType::Article);
+        assert_eq!(imported.tags, vec!["json", "test", "import"]);
+        assert_eq!(imported.metadata.get("author"), Some(&"Test Author".to_string()));
+        assert_eq!(imported.metadata.get("priority"), Some(&"high".to_string()));
+    }
+
+    #[test]
+    fn test_import_json_minimal() {
+        // US-020: Test JSON import with minimal structure
+        let json = r#"{"content": "Just content"}"#;
+
+        let imported = ImportExportService::import_document(
+            json.as_bytes(),
+            &ImportFormat::Json,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, "Untitled");
+        assert_eq!(imported.content, "Just content");
+        assert_eq!(imported.doc_type, DocumentType::Note);
+        assert!(imported.tags.is_empty());
+        assert!(imported.metadata.is_empty());
+    }
+
+    #[test]
+    fn test_import_json_invalid() {
+        // US-020: Test JSON import with invalid JSON
+        let invalid_json = r#"{"invalid": json structure"#;
+
+        let result = ImportExportService::import_document(
+            invalid_json.as_bytes(),
+            &ImportFormat::Json,
+            &ImportOptions::default(),
+        );
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_import_json_type_variants() {
+        // US-019: Test JSON import with different document types
+        let test_cases = vec![
+            ("note", DocumentType::Note),
+            ("article", DocumentType::Article),
+            ("report", DocumentType::Report),
+            ("unknown", DocumentType::Note), // Falls back to Note
+        ];
+
+        for (type_str, expected_type) in test_cases {
+            let json = format!(r#"{{"title": "Test", "type": "{}"}}"#, type_str);
+            let imported = ImportExportService::import_document(
+                json.as_bytes(),
+                &ImportFormat::Json,
+                &ImportOptions::default(),
+            ).unwrap();
+            assert_eq!(imported.doc_type, expected_type);
+        }
+    }
+
+    #[test]
+    fn test_import_unsupported_formats() {
+        // US-020: Test import with unsupported formats
+        let content = b"test content";
+
+        let unsupported_formats = vec![
+            ImportFormat::Pdf,
+            ImportFormat::Word,
+            ImportFormat::Custom("custom".to_string()),
+        ];
+
+        for format in unsupported_formats {
+            let result = ImportExportService::import_document(
+                content,
+                &format,
+                &ImportOptions::default(),
+            );
+            assert!(result.is_err());
+        }
+    }
+
+    // EXPORT TESTS
+
+    #[test]
+    fn test_export_markdown_with_metadata() {
+        // US-018: Test markdown export with metadata
+        let doc = create_test_document();
+        let options = create_export_options(true, None);
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Markdown, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(result.contains("---"));
+        assert!(result.contains("title: Test Document"));
+        assert!(result.contains("version: 1.2.3"));
+        assert!(result.contains("type: Article"));
+        assert!(result.contains("created: 2023-01-01"));
+        assert!(result.contains("updated: 2023-01-02"));
+        assert!(result.contains("tags:"));
+        assert!(result.contains("- test"));
+        assert!(result.contains("- sample"));
+        assert!(result.contains("category: testing"));
+        assert!(result.contains("priority: high"));
+        assert!(result.contains("# Test Document"));
+        assert!(result.contains("This is the main content"));
+    }
+
+    #[test]
+    fn test_export_markdown_without_metadata() {
+        // US-019: Test markdown export without metadata
+        let doc = create_test_document();
+        let options = create_export_options(false, None);
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Markdown, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(!result.contains("---"));
+        assert!(!result.contains("version:"));
+        assert!(result.contains("# Test Document"));
+        assert!(result.contains("This is the main content"));
+    }
+
+    #[test]
+    fn test_export_markdown_with_watermark() {
+        // US-019: Test markdown export with watermark
+        let doc = create_test_document();
+        let options = create_export_options(false, Some("Confidential Document".to_string()));
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Markdown, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(result.contains("*Confidential Document*"));
+    }
+
+    #[test]
+    fn test_export_plain_text_with_metadata() {
+        // US-018: Test plain text export with metadata
+        let doc = create_test_document();
+        let options = create_export_options(true, None);
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::PlainText, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(result.contains("Test Document"));
+        assert!(result.contains(&"=".repeat(13))); // Title underline
+        assert!(result.contains("Version: 1.2.3"));
+        assert!(result.contains("Created: 2023-01-01"));
+        assert!(result.contains("Updated: 2023-01-02"));
+        assert!(result.contains("This is the main content"));
+    }
+
+    #[test]
+    fn test_export_plain_text_without_metadata() {
+        // US-019: Test plain text export without metadata
+        let doc = create_test_document();
+        let options = create_export_options(false, None);
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::PlainText, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(result.contains("Test Document"));
+        assert!(result.contains(&"=".repeat(13)));
+        assert!(!result.contains("Version:"));
+        assert!(!result.contains("Created:"));
+        assert!(result.contains("This is the main content"));
+    }
+
+    #[test]
+    fn test_export_plain_text_with_watermark() {
+        // US-019: Test plain text export with watermark
+        let doc = create_test_document();
+        let options = create_export_options(false, Some("Internal Use Only".to_string()));
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::PlainText, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(result.contains("Internal Use Only"));
+    }
+
+    #[test]
+    fn test_export_html_with_metadata() {
+        // US-018: Test HTML export with metadata
+        let doc = create_test_document();
+        let options = create_export_options(true, None);
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Html, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(result.contains("<!DOCTYPE html>"));
+        assert!(result.contains("<title>Test Document</title>"));
+        assert!(result.contains("charset=\"UTF-8\""));
+        assert!(result.contains("meta name=\"version\" content=\"1.2.3\""));
+        assert!(result.contains("meta name=\"created\""));
+        assert!(result.contains("meta name=\"keywords\" content=\"test\""));
+        assert!(result.contains("meta name=\"keywords\" content=\"sample\""));
+        assert!(result.contains("<h1>Test Document</h1>"));
+        assert!(result.contains("This is the main content"));
+        assert!(result.contains("</html>"));
+    }
+
+    #[test]
+    fn test_export_html_without_metadata() {
+        // US-019: Test HTML export without metadata
+        let doc = create_test_document();
+        let options = create_export_options(false, None);
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Html, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(result.contains("<title>Test Document</title>"));
+        assert!(!result.contains("meta name=\"version\""));
+        assert!(!result.contains("meta name=\"created\""));
+        assert!(!result.contains("meta name=\"keywords\""));
+    }
+
+    #[test]
+    fn test_export_html_with_watermark() {
+        // US-019: Test HTML export with watermark
+        let doc = create_test_document();
+        let options = create_export_options(false, Some("Copyright 2023".to_string()));
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Html, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(result.contains("<hr>"));
+        assert!(result.contains("<em>Copyright 2023</em>"));
+    }
+
+    #[test]
+    fn test_export_html_content_conversion() {
+        // US-019: Test HTML export content conversion (line breaks)
+        let mut doc = create_test_document();
+        doc.content = "Line 1\n\nLine 2\nLine 3".to_string();
+        let options = create_export_options(false, None);
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Html, &options).unwrap();
+        let result = String::from_utf8(exported).unwrap();
+
+        assert!(result.contains("Line 1</p>"));
+        assert!(result.contains("<p>Line 2<br>"));
+        assert!(result.contains("Line 3</p>"));
+    }
+
+    #[test]
+    fn test_export_json_with_metadata() {
+        // US-018: Test JSON export with metadata
+        let doc = create_test_document();
+        let options = create_export_options(true, None);
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Json, &options).unwrap();
+        let result: serde_json::Value = serde_json::from_slice(&exported).unwrap();
+
+        assert_eq!(result["title"], "Test Document");
+        assert_eq!(result["content"], "This is the main content of the document.\n\nIt has multiple paragraphs.");
+        assert_eq!(result["type"], "article");
+        assert_eq!(result["version"], "1.2.3");
+        assert!(result["created_at"].is_string());
+        assert!(result["updated_at"].is_string());
+        assert!(result["author"].is_string());
+        assert_eq!(result["tags"], serde_json::json!(["test", "sample"]));
+        assert_eq!(result["metadata"]["category"], "testing");
+        assert_eq!(result["metadata"]["priority"], "high");
+    }
+
+    #[test]
+    fn test_export_json_without_metadata() {
+        // US-019: Test JSON export without metadata
+        let doc = create_test_document();
+        let options = create_export_options(false, None);
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Json, &options).unwrap();
+        let result: serde_json::Value = serde_json::from_slice(&exported).unwrap();
+
+        assert_eq!(result["title"], "Test Document");
+        assert_eq!(result["content"], "This is the main content of the document.\n\nIt has multiple paragraphs.");
+        assert_eq!(result["type"], "article");
+        assert_eq!(result["version"], "1.2.3");
+        assert!(result.get("created_at").is_none());
+        assert!(result.get("updated_at").is_none());
+        assert!(result.get("author").is_none());
+        assert!(result.get("tags").is_none());
+        assert!(result.get("metadata").is_none());
+    }
+
+    #[test]
+    fn test_export_json_with_watermark() {
+        // US-019: Test JSON export with watermark
+        let doc = create_test_document();
+        let options = create_export_options(false, Some("Property of Company".to_string()));
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Json, &options).unwrap();
+        let result: serde_json::Value = serde_json::from_slice(&exported).unwrap();
+
+        assert_eq!(result["watermark"], "Property of Company");
+    }
+
+    #[test]
+    fn test_export_unsupported_formats() {
+        // US-020: Test export with unsupported formats
+        let doc = create_test_document();
+        let options = create_export_options(false, None);
+
+        let unsupported_formats = vec![
+            ExportFormat::Pdf,
+            ExportFormat::Word,
+            ExportFormat::Custom("custom".to_string()),
+        ];
+
+        for format in unsupported_formats {
+            let result = ImportExportService::export_document(&doc, &format, &options);
+            assert!(result.is_err());
+        }
+    }
+
+    // HELPER FUNCTION TESTS
+
+    #[test]
+    fn test_html_escape() {
+        // US-020: Test HTML escaping utility function
+        let test_cases = vec![
+            ("normal text", "normal text"),
+            ("text & more", "text &amp; more"),
+            ("<script>", "&lt;script&gt;"),
+            ("\"quoted\"", "&quot;quoted&quot;"),
+            ("'single'", "&#39;single&#39;"),
+            ("<>&\"'", "&lt;&gt;&amp;&quot;&#39;"),
+        ];
+
+        for (input, expected) in test_cases {
+            assert_eq!(html_escape(input), expected);
+        }
+    }
+
+    #[test]
+    fn test_imported_document_structure() {
+        // US-019: Test ImportedDocument structure creation
+        let imported = ImportedDocument {
+            title: "Test Title".to_string(),
+            content: "Test Content".to_string(),
+            doc_type: DocumentType::Note,
+            metadata: HashMap::new(),
+            tags: vec!["tag1".to_string()],
+        };
+
+        assert_eq!(imported.title, "Test Title");
+        assert_eq!(imported.content, "Test Content");
+        assert_eq!(imported.doc_type, DocumentType::Note);
+        assert!(imported.metadata.is_empty());
+        assert_eq!(imported.tags, vec!["tag1"]);
+    }
+
+    #[test]
+    fn test_round_trip_markdown() {
+        // US-019: Test round-trip conversion (export -> import)
+        let doc = create_test_document();
+        let options = create_export_options(true, None);
+
+        // Export to markdown
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Markdown, &options).unwrap();
+
+        // Import back
+        let imported = ImportExportService::import_document(
+            &exported,
+            &ImportFormat::Markdown,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, doc.title);
+        assert!(imported.content.contains(&doc.content));
+    }
+
+    #[test]
+    fn test_round_trip_json() {
+        // US-019: Test round-trip JSON conversion
+        let doc = create_test_document();
+        let options = create_export_options(true, None);
+
+        // Export to JSON
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Json, &options).unwrap();
+
+        // Import back
+        let imported = ImportExportService::import_document(
+            &exported,
+            &ImportFormat::Json,
+            &ImportOptions::default(),
+        ).unwrap();
+
+        assert_eq!(imported.title, doc.title);
+        assert_eq!(imported.content, doc.content);
+        assert_eq!(imported.doc_type, doc.doc_type);
+    }
+
+    #[test]
+    fn test_edge_cases_empty_document() {
+        // US-020: Test export with empty/minimal document
         let doc = DocumentFullView {
             id: DocumentId::new(),
-            title: "Test Export".to_string(),
-            content: "This is the content.".to_string(),
-            version: DocumentVersion::new(1, 0, 0),
+            title: "".to_string(),
+            content: "".to_string(),
+            version: DocumentVersion::new(0, 0, 1),
             doc_type: DocumentType::Note,
-            tags: vec!["test".to_string()],
+            tags: vec![],
             author: Uuid::new_v4(),
             metadata: HashMap::new(),
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
         };
 
-        let exported = ImportExportService::export_document(
-            &doc,
-            &ExportFormat::Markdown,
-            &ExportOptions::default(),
-        ).unwrap();
+        let formats = vec![
+            ExportFormat::Markdown,
+            ExportFormat::PlainText,
+            ExportFormat::Html,
+            ExportFormat::Json,
+        ];
 
-        let result = String::from_utf8(exported).unwrap();
-        assert!(result.contains("# Test Export"));
-        assert!(result.contains("This is the content."));
-        assert!(result.contains("tags:"));
+        for format in formats {
+            let result = ImportExportService::export_document(&doc, &format, &create_export_options(false, None));
+            assert!(result.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_large_content_handling() {
+        // US-020: Test handling of large content
+        let large_content = "x".repeat(10000);
+        let mut doc = create_test_document();
+        doc.content = large_content.clone();
+
+        let exported = ImportExportService::export_document(&doc, &ExportFormat::Json, &create_export_options(false, None)).unwrap();
+        let result: serde_json::Value = serde_json::from_slice(&exported).unwrap();
+
+        assert_eq!(result["content"].as_str().unwrap(), &large_content);
+    }
+
+    #[test]
+    fn test_special_characters_handling() {
+        // US-020: Test handling of special characters in content
+        let special_content = "Content with émojis 🚀 and spëcial chars: éñ中文";
+        let mut doc = create_test_document();
+        doc.title = special_content.to_string();
+        doc.content = special_content.to_string();
+
+        let formats = vec![
+            ExportFormat::Markdown,
+            ExportFormat::PlainText,
+            ExportFormat::Html,
+            ExportFormat::Json,
+        ];
+
+        for format in formats {
+            let result = ImportExportService::export_document(&doc, &format, &create_export_options(false, None));
+            assert!(result.is_ok());
+        }
     }
 } 
