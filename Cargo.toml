@@ -12,8 +12,6 @@ categories = ["data-structures", "asynchronous"]
 [dependencies]
 # Core dependencies
 cim-domain = { git = "https://github.com/TheCowboyAI/cim-domain.git", branch = "main" }
-cim-infrastructure = { path = "../cim-infrastructure" }
-cim-ipld = { git = "https://github.com/TheCowboyAI/cim-domain.git", branch = "main" }
 
 # Async runtime
 tokio = { version = "1.41", features = ["full"] }

@@ -1,6 +1,6 @@
 //! Document import/export service
 
-use crate::value_objects::{DocumentType, ImportOptions, ExportOptions, ImportFormat, ExportFormat};
+use crate::value_objects::{DocumentId, DocumentType, ImportOptions, ExportOptions, ImportFormat, ExportFormat};
 use crate::projections::DocumentFullView;
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;

@@ -1,6 +1,6 @@
 //! Document template service
 
-use crate::value_objects::{DocumentTemplate, TemplateId, VariableType};
+use crate::value_objects::{DocumentTemplate, TemplateId, TemplateVariable, VariableType};
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
 use regex::Regex;
