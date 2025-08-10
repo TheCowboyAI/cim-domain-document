@@ -55,6 +55,10 @@ bash .claude/scripts/detect-context.sh
 - **Testing**: [standards/test-driven-development.md](./standards/test-driven-development.md)
 - **Debugging**: [troubleshooting.md](./troubleshooting.md)
 
+### By Expertise
+- **CIM Architecture**: `/cim` - Mathematical foundations and patterns
+- **Domain Creation**: `/domain` - Interactive domain boundary design
+
 ### By Domain Focus
 - **Document Domain**: [patterns/domain-driven-design.md](./patterns/domain-driven-design.md)
 - **Event Sourcing**: [patterns/event-sourcing-detailed.md](./patterns/event-sourcing-detailed.md)
@@ -70,8 +74,10 @@ bash .claude/scripts/detect-context.sh
 
 ```
 What are you doing?
-├── 🔍 Understanding the codebase
-│   └── Read: INDEX.md → patterns/domain-driven-design.md
+├── 🔍 Understanding CIM architecture
+│   └── Type: /cim (CIM expert agent)
+├── 🎯 Creating domain boundaries
+│   └── Type: /domain (Domain creation specialist)
 ├── 📋 Planning new features
 │   └── Read: workflows/implementation-flow.md → patterns/event-sourcing-detailed.md
 ├── 💻 Writing code
@@ -81,6 +87,11 @@ What are you doing?
 └── 🐛 Debugging issues
     └── Read: troubleshooting.md → common-tasks.md
 ```
+
+## 🤖 Slash Commands
+
+- **`/cim`** - Start CIM architecture expert for mathematical foundations, Category Theory, Graph Theory, IPLD patterns
+- **`/domain`** - Start domain creation specialist for interactive domain boundary design
 
 ## 📋 Progress Tracking
 

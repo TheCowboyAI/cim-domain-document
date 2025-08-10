@@ -210,6 +210,12 @@ This directory contains all instructions, patterns, and standards for Claude AI 
 
 - **[security/settings.json](./security/settings.json)** - Permission settings
 
+### 🤖 Agents
+**Specialized Claude subagents for CIM development**
+
+- **[agents/cim-expert.md](./agents/cim-expert.md)** - CIM architecture and mathematical foundations expert
+- **[agents/domain-expert.md](./agents/domain-expert.md)** - Interactive domain creation specialist
+
 ## Quick Start Guide
 
 1. **First Time**: Read [start_here.md](./start_here.md) - PRIMARY ENTRY POINT
